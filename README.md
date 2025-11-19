@@ -1,8 +1,4 @@
 # Code_Sense
-Sure! Here’s a **clean, professional, developer-friendly `README.md`** you can use for your project (code-to-English explanation tool with dashboard, landing page, and admin panel).
-
-You can copy-paste it directly into your GitHub repo.
-
 ---
 
 # 🚀 CodeSense – Convert Code Snippets Into Simple English Explanations
