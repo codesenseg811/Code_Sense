@@ -1,0 +1,108 @@
+body {
+    font-family: 'Segoe UI', Arial, sans-serif;
+    background: #f7f8fa;
+    color: #252a34;
+    margin: 0;
+    padding: 0;
+}
+
+header nav {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 20px 48px;
+    background: #fff;
+    box-shadow: 0 2px 8px rgba(46, 91, 255, 0.05);
+}
+
+header nav span {
+    font-weight: 600;
+    font-size: 1.3em;
+}
+
+header nav a, header nav button {
+    margin-left: 18px;
+    background: none;
+    border: none;
+    color: #252a34;
+    cursor: pointer;
+    font-size: 1em;
+    text-decoration: none;
+}
+
+main {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 48px 16px;
+    background: #f7f8fa;
+}
+
+section {
+    margin-bottom: 40px;
+    background: #fff;
+    padding: 32px;
+    border-radius: 16px;
+    box-shadow: 0 2px 8px rgba(46, 91, 255, 0.08);
+}
+
+h1, h2 {
+    font-size: 2em;
+    font-weight: 700;
+    margin-bottom: 12px;
+}
+
+h3, h4 {
+    font-size: 1.1em;
+    font-weight: 500;
+    margin-top: 0;
+}
+
+button {
+    background: linear-gradient(90deg, #6e4fff, #bb9cff);
+    color: #fff;
+    border-radius: 8px;
+    border: none;
+    font-size: 1em;
+    font-weight: 600;
+    padding: 8px 24px;
+    margin-right: 12px;
+    cursor: pointer;
+    box-shadow: 0 1px 4px rgba(46, 91, 255, 0.13);
+}
+
+pre {
+    background: #f3f6fa;
+    border-radius: 12px;
+    padding: 16px;
+    font-size: 1em;
+    margin: 0;
+    overflow-x: auto;
+}
+
+section > div {
+    display: flex;
+    gap: 2em;
+    align-items: flex-start;
+    margin-bottom: 16px;
+}
+
+section > div > div {
+    flex: 1;
+}
+
+footer {
+    background: #fff;
+    padding: 32px 48px;
+    border-top: 1px solid #e6e8ef;
+    color: #636884;
+    font-size: 1em;
+    margin-top: 60px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 3em;
+}
+
+footer div {
+    flex: 1    ;
+    min-width: 180px;
+}
