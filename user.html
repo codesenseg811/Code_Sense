@@ -578,49 +578,17 @@
     </main>
 </div>
 
+<script src="app.js"></script>
 <script>
+    // Guard: ensure only users with role 'user' can view this page
     (function(){
-        const html = document.documentElement;
-        const body = document.body;
-        const toggle = document.getElementById('theme-toggle');
-
-        function applyTheme(theme){
-            if(!theme) return;
-            if(theme === 'light'){
-                html.setAttribute('data-theme','light');
-                body.setAttribute('data-theme','light');
-            } else {
-                html.removeAttribute('data-theme');
-                body.removeAttribute('data-theme');
+        try{
+            const cur = JSON.parse(sessionStorage.getItem('currentUser') || 'null');
+            if(!cur || cur.role !== 'user'){
+                // not authorized -> return to homepage
+                window.location.href = 'index.html';
             }
-            localStorage.setItem('theme', theme);
-            updateToggleLabel(theme);
-        }
-
-        function updateToggleLabel(theme){
-            if(!toggle) return;
-            toggle.textContent = theme === 'light' ? '☀️' : '🌙';
-        }
-
-        const saved = localStorage.getItem('theme');
-        if(saved){
-            applyTheme(saved);
-        } else {
-            const prefersLight = window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches;
-            applyTheme(prefersLight ? 'light' : 'dark');
-        }
-
-        if(toggle){
-            toggle.addEventListener('click', ()=>{
-                const current = localStorage.getItem('theme') === 'light' ? 'light' : 'dark';
-                const next = current === 'light' ? 'dark' : 'light';
-                applyTheme(next);
-            });
-        }
-
-        window.addEventListener('storage', (e)=>{
-            if(e.key === 'theme') applyTheme(e.newValue);
-        });
+        }catch(e){ window.location.href = 'index.html'; }
     })();
 </script>
 </body>

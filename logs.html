@@ -27,7 +27,7 @@
             <p>View recent system operations and activities</p>
             <div>
                 <a href="#">User View</a>
-                <a href="#">Log Out</a>
+                <a href="#" class="logout-link">Log Out</a>
             </div>
         </header>
         <section>
@@ -42,5 +42,15 @@
                 </tr>
             </table>
         </section>
-</body>
-</html>
+            <script src="app.js"></script>
+            <script>
+                // Guard: admin-only
+                (function(){
+                    try{
+                        const cur = JSON.parse(sessionStorage.getItem('currentUser') || 'null');
+                        if(!cur || cur.role !== 'admin') window.location.href = 'index.html';
+                    }catch(e){ window.location.href = 'index.html'; }
+                })();
+            </script>
+        </body>
+        </html>

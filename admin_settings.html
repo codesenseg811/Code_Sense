@@ -32,7 +32,7 @@
             <nav>
                 <div>
                     <a href="#">User View</a>
-                    <a href="#">Log out</a>
+                    <a href="#" class="logout-link">Log out</a>
                 </div>
             </nav>
         </header>
@@ -70,5 +70,15 @@
             <button>Save Settings</button>
         </footer>
     </main>
+    <script src="app.js"></script>
+    <script>
+        // Guard: admin-only
+        (function(){
+            try{
+                const cur = JSON.parse(sessionStorage.getItem('currentUser') || 'null');
+                if(!cur || cur.role !== 'admin') window.location.href = 'index.html';
+            }catch(e){ window.location.href = 'index.html'; }
+        })();
+    </script>
 </body>
 </html>

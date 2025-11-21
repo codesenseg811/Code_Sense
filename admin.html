@@ -32,7 +32,7 @@
             <nav>
                 <div>
                     <a href="#">User View</a>
-                    <a href="#">Log out</a>
+                    <a href="#" class="logout-link">Log out</a>
                 </div>
             </nav>
             </header>
@@ -85,5 +85,18 @@
             </table>
             </div>
            </main>
-</body>
-</html>
+    <script src="app.js"></script>
+    <script>
+        // Guard: ensure only users with role 'admin' can view this page
+        (function(){
+            try{
+                const cur = JSON.parse(sessionStorage.getItem('currentUser') || 'null');
+                if(!cur || cur.role !== 'admin'){
+                    // not authorized -> return to homepage
+                    window.location.href = 'index.html';
+                }
+            }catch(e){ window.location.href = 'index.html'; }
+        })();
+    </script>
+    </body>
+    </html>
