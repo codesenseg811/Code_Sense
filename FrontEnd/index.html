@@ -235,28 +235,5 @@ function fibonacci(n) {
         </div>
     </footer>
 </body>
-<script>
-    const openBtn = document.getElementById("try-now");
-    const modal = document.getElementById("loginModal");
-    const closeBtn = document.getElementById("closeLogin");
-    const content = document.getElementById("pageContent");
-
-    openBtn.onclick = () => {
-      modal.style.display = "flex";
-      content.classList.add("blur");
-    };
-
-    closeBtn.onclick = () => {
-      modal.style.display = "none";
-      content.classList.remove("blur");
-    };
-
-    // Close on clicking outside modal
-    window.onclick = (e) => {
-      if (e.target === modal) {
-        modal.style.display = "none";
-        content.classList.remove("blur");
-      }
-    };
-</script>
+<script src="app.js"></script>
 </html>
