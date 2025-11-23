@@ -37,8 +37,7 @@ app.post('/register', async (req, res) => {
   } catch (e) {
     console.log(e);
     res.status(400).json({ message: "Problem occured", error: e.message });
-
   }
-})
+});
 
 start();
