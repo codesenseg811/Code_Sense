@@ -136,11 +136,8 @@
                     <td><button class="delete_user" data-username=${user.username}>Delete</button></td>
                 `;
                 tablebody.appendChild(tr);
-            });        
-        } catch (e){
-            console.log(e); 
-        }
-        document.querySelectorAll(".delete_user").forEach(btn=>{
+            });    
+            document.querySelectorAll(".delete_user").forEach(btn=>{
     btn.addEventListener("click",async ()=>{
         const username=btn.dataset.username;
         if(!confirm(`Delete user ${username}`)) return;
@@ -160,7 +157,11 @@
         console.log(err);
     }
     })
-    })
+    })    
+        } catch (e){
+            console.log(e); 
+        }
+        
 
     });
 })();
