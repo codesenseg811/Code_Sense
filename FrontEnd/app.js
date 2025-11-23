@@ -18,7 +18,7 @@
             if(sel) sel.value = mode === 'dark' ? 'Dark' : 'Light';
         }catch(e){}
     }
-})
+
     function initThemeControls(){
         const saved = localStorage.getItem(THEME_KEY);
         if(saved) applyTheme(saved); else applyTheme('light');
@@ -163,4 +163,5 @@
     })
 
     });
+})();
     
