@@ -120,7 +120,7 @@
         const tryNow = document.getElementById('try-now');
         if(tryNow) tryNow.addEventListener('click', ()=> showLoginModal());
 
-        const tablebody = document.querySelector("tbody");
+        const tablebody = document.getElementById("User_data");
         if(!tablebody) return;
         try{
             const res = await fetch("http://localhost:5000/get-users");
