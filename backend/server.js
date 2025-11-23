@@ -2,7 +2,7 @@ const connectDB=require("./db")
 const express = require('express');
 const cors = require('cors');
 connectDB();
-const User = require('./models/User.js');
+const Login = require('./models/User.js');
 const bcrypt = require('bcrypt');
 const app = express();
 require("dotenv").config();
@@ -13,7 +13,7 @@ app.post('/register', async (req, res) => {
   const { username, password, role } = req.body;
   const hashed = await bcrypt.hash(password, 10);
   try {
-    const user = await User.create({ username, password: hashed, role });
+    const user = await Login.create({ username, password: hashed, role });
     res.json({ message: "User created", user });
   } catch (e) {
     console.log(e);
