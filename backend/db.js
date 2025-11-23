@@ -1,5 +1,5 @@
-const mongoose=require("mongoose");
-import dotenv from dotenv
+import mongoose from "mongoose";
+import dotenv from "dotenv"
 dotenv.config()
 const connectDB=async()=>{
     try{
@@ -10,3 +10,4 @@ const connectDB=async()=>{
         console.log("Mongodb failed to connect")
     }
 }
+export default connectDB
