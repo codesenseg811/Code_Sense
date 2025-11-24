@@ -52,6 +52,25 @@ app.post("/delete-user",async(req,res)=>{
   if(!user) return res.status(404).json({message: "User not found"});
   await Login.deleteOne({username})
   return res.json({message:"user deleted successfully"})
+});
+
+app.post('/admin-history', async(req,res)=>{
+  try{
+    const history = await User_history.find({});
+    res.json(history);
+  } catch (e){
+    res.status(400).json({message: e});
+  }
+});
+
+app.post('/user-history', async(req,res)=>{
+  const {username} = req.body;
+  try{
+    const history = await User_history.find({username});
+    res.json(history);
+  } catch (e){
+    res.status(400).json({message: e});
+  }
 })
 app.post("/api/explain", async (req, res) => {
   const { code, language } = req.body;
