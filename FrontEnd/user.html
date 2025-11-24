@@ -354,6 +354,46 @@
             padding: 3px;
         }
 
+         /* Profile dropdown container */
+.profile-wrapper {
+    position: relative;
+    display: inline-block;
+}
+
+/* Dropdown box */
+.profile-menu {
+    position: absolute;
+    top: 38px;
+    right: 0;
+    background: var(--panel-bg, #fff);
+    border: 1px solid rgba(0,0,0,0.15);
+    box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+    border-radius: 6px;
+    min-width: 150px;
+    padding: 8px 0;
+    display: none;
+    z-index: 999;
+}
+
+/* Items inside dropdown */
+.profile-menu a,
+.profile-menu button {
+    display: block;
+    width: 100%;
+    text-align: left;
+    background: none;
+    border: none;
+    padding: 10px 14px;
+    cursor: pointer;
+    font-size: 14px;
+    color: var(--text-color, #222);
+}
+
+.profile-menu a:hover,
+.profile-menu button:hover {
+    background: rgba(0,0,0,0.08);
+}
+
         html[data-theme="light"] .right-tabs {
             background: rgba(15,23,42,0.06);
         }
@@ -462,6 +502,9 @@
             .topbar{flex-direction: column; align-items: flex-start;}
             .top-actions{align-self: stretch; justify-content: flex-end;}
         }
+
+       
+
     </style>
 </head>
 <body>
@@ -490,7 +533,15 @@
 
         <div class="top-actions">
             <button id="theme-toggle" class="icon-btn" title="Toggle theme">🌙</button>
-            <button class="icon-btn" title="Profile">👤</button>
+            <div class="profile-wrapper">
+                            <button id="profile-btn" class="icon-btn" title="Profile">👤</button>
+
+                            <div id="profile-menu" class="profile-menu">
+                            <a href="user_settings.html">Settings</a>
+                            <button id="logout-btn">Logout</button>
+                    </div>
+            </div>
+
             <button class="icon-btn" title="Share">⤴</button>
         </div>
     </header>
@@ -590,6 +641,29 @@
             }
         }catch(e){ window.location.href = 'index.html'; }
     })();
+
+    // Toggle profile dropdown
+const profileBtn = document.getElementById('profile-btn');
+const profileMenu = document.getElementById('profile-menu');
+
+profileBtn.addEventListener('click', () => {
+    profileMenu.style.display =
+        profileMenu.style.display === 'block' ? 'none' : 'block';
+});
+
+// Close dropdown on outside click
+document.addEventListener('click', (e) => {
+    if (!profileBtn.contains(e.target) && !profileMenu.contains(e.target)) {
+        profileMenu.style.display = 'none';
+    }
+});
+
+// Logout logic
+document.getElementById('logout-btn').addEventListener('click', () => {
+    sessionStorage.removeItem('currentUser');
+    window.location.href = "index.html";
+});
+
 </script>
 </body>
 </html>
