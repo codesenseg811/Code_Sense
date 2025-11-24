@@ -110,7 +110,21 @@
     const tbody=document.getElementById("user-history")
     if(!tbody) return 
     try{
-        const response=fetch("http://localhost:5000")
+        const response=await fetch("http://localhost:5000/admin-history")
+        const result=await response.json()
+        tbody.innerHTML="";
+        result.forEach(user=>{
+            const tr=document.createElement('tr');
+            tr.innerHTML=`
+            <td>${user.username}</td>
+            <td>${user.Action}</td>
+            <td>${user.language}</td>
+            <td>${user.time}</td>
+            `
+            tbody.append(tr);
+        });
+    }catch(err){
+        console.log("Failed to fetch user history");
     }
     document.addEventListener('DOMContentLoaded', async ()=>{
         try{ initThemeControls(); }catch(e){}
