@@ -4,6 +4,7 @@ const cors = require('cors');
 const axios = require('axios'); 
 connectDB();
 const Login = require('./models/User.js');
+const User_history = require('./models/History.js');
 const bcrypt = require('bcrypt');
 const { JsonWebTokenError } = require("jsonwebtoken");
 const app = express();
@@ -52,6 +53,17 @@ app.post("/delete-user",async(req,res)=>{
   if(!user) return res.status(404).json({message: "User not found"});
   await Login.deleteOne({username})
   return res.json({message:"user deleted successfully"})
+});
+
+app.post('/add-history', async (req, res) => {
+  const { username, role, action, language } = req.body;
+  try {
+    const history = await User_history.create({ username, role, action, language });
+    res.json({ message: `History saved for: ${username}`, history });
+  } catch (e) {
+    console.log(e);
+    res.status(400).json({ message: "Problem occurred", error: e.message });
+  }
 });
 
 app.post('/admin-history', async(req,res)=>{
