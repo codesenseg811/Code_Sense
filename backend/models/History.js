@@ -6,4 +6,4 @@ const HistorySchema=new mongoose.Schema({
     language:{type:String,required:true},
     time:{type:Date,default:Date.now()}
 });
-module.exports=mongoose.model("User_history",HistorySchema,"history")
+module.exports=mongoose.model("User_history",HistorySchema,"history2")

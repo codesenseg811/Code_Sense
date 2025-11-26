@@ -89,7 +89,11 @@
             const p = modal.querySelector('#login-password').value;
             const err = modal.querySelector('#login-error');
             err.style.display = 'none';
-            if(!u || !p){ err.textContent = 'Please enter username and password.'; err.style.display = 'block'; return; }
+            if(!u || !p){ 
+                err.textContent = 'Please enter username and password.'; 
+                err.style.display = 'block'; 
+                return; 
+            }
             try{
                 const response = await fetch("http://localhost:5000/login",{
                     method: "POST",
@@ -143,7 +147,8 @@
                             const result = await response.json();
                             sessionStorage.setItem('currentUser', JSON.stringify(result));
                             staticModal.style.display = 'none';
-                            if(result.role === 'admin') window.location.href = 'admin.html'; else window.location.href = 'user.html';
+                            if(result.role === 'admin') window.location.href = 'admin.html'; 
+                            else window.location.href = 'user.html';
                         }catch(err){
                             console.error(err);
                             alert('Login failed.');
@@ -183,7 +188,33 @@
         const tryNow = document.getElementById('try-now');
         if(tryNow) tryNow.addEventListener('click', ()=> showLoginModal());
 
-        // USER PAGE: generate explanation
+        // helper to save history AFTER explanation
+        async function saveHistoryAfterExplain(){
+            try{
+                const user = JSON.parse(sessionStorage.getItem("currentUser") || "null");
+                if(!user || !user.username) return;
+
+                const language = document.getElementById("language")?.value || "Auto";
+                const action = document.getElementById("code-input")?.value || "";
+
+                if(!action.trim()) return;
+
+                await fetch("http://localhost:5000/add-history",{
+                    method: "POST",
+                    headers: {"Content-Type": "application/json"},
+                    body:JSON.stringify({
+                        username: user.username,
+                        role: user.role,
+                        action,
+                        language
+                    })
+                });
+            }catch(err){
+                console.log("Failed to save history", err);
+            }
+        }
+
+        // USER PAGE: generate explanation (and save history)
         const explainBtn = document.querySelector(".bottom-cta .btn-primary");
         if (explainBtn) {
             explainBtn.addEventListener("click", async () => {
@@ -228,6 +259,10 @@
                             </div>
                         `;
                     }
+
+                    // 👉 save history only after successful explanation
+                    await saveHistoryAfterExplain();
+
                 } catch (err) {
                     console.error(err);
                     if (view) {
@@ -241,21 +276,15 @@
                 }
             });
         }
-        document.querySelector(".btn-primary").addEventListener("click",async()=>{
-            const language=document.getElementById("language").value;
-            const action=document.getElementById("code-input").value;
-            const user=JSON.parse(sessionStorage.getItem("currentUser"))
-            const username=user.username;
-            const role=user.role
-            const response=await fetch("http://localhost:5000/add-history",{
-                method: "POST",
-                headers: {"Content-Type": "application/json"},
-                body:JSON.stringify({username,role,action,language})
-            })
-        })
-        const currentUser = JSON.parse(sessionStorage.getItem("currentUser"));
+
+        // ❌ REMOVED the old generic .btn-primary listener that was crashing pages
+        // document.querySelector(".btn-primary").addEventListener(...)
+
+        const currentUser = JSON.parse(sessionStorage.getItem("currentUser") || "null");
         const username = currentUser?.username;
-        const tblbody=document.getElementById("user_history");
+
+        // USER HISTORY TABLE
+        const tblbody = document.getElementById("user_history");
         if(tblbody){
             try{
                 const response = await fetch("http://localhost:5000/user-history",{
@@ -263,7 +292,7 @@
                     headers: {"Content-Type": "application/json"},
                     body: JSON.stringify({ username })
                 });
-                result = await response.json();
+                const result = await response.json();
                 tblbody.innerHTML="";
                 result.forEach(data=>{
                     const tr=document.createElement('tr');
@@ -273,12 +302,13 @@
                     <td>${data.time || data.createdAt || "—"}</td>
                     `;
                     tblbody.append(tr);
-                })
+                });
             } catch(e){
                 console.log("Failed to fetch user history");
             }
         }
 
+        // ADMIN HISTORY TABLE
         const tbody=document.getElementById("admin_user_history");
         if(tbody){
             try{
@@ -303,6 +333,7 @@
             }
         }
 
+        // ADMIN USER DATA TABLE
         const tablebody = document.getElementById("admin_user_data");
         if(!tablebody) return;
         try{
@@ -316,7 +347,7 @@
                     <td>${user.email || "—"}</td>
                     <td>${user.requests || 0}</td>
                     <td>${user.role}</td>
-                    <td><button class="delete_user" data-username=${user.username}>Delete</button></td>
+                    <td><button class="delete_user" data-username="${user.username}">Delete</button></td>
                 `;
                 tablebody.appendChild(tr);
             });    
@@ -331,16 +362,15 @@
                                 "Content-Type": "application/json"
                             },
                             body:JSON.stringify({username})
-                        })
+                        });
                         const result=await response.json();
-                        console.log(result.message)
+                        console.log(result.message);
                         btn.closest("tr").remove();
+                    } catch(err){
+                        console.log(err);
                     }
-                catch(err){
-                    console.log(err);
-                }
-                })
-            })    
+                });
+            });    
         } catch (e){
             console.log(e); 
         }
