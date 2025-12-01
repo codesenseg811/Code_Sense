@@ -92,63 +92,155 @@
         const staticModal = document.getElementById('loginModal') || document.getElementById('login-modal');
         if(staticModal){
             staticModal.style.display = 'flex';
+            setupAuthModal(staticModal);
             return;
         }
+    }
 
-        const modal = document.createElement('div');
-        modal.id = 'login-modal';
-        modal.style = 'position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.5);z-index:9999;';
-        modal.innerHTML = `
-            <div style="background:#fff;color:#111;border-radius:10px;padding:20px;max-width:380px;width:95%;box-shadow:0 8px 28px rgba(2,6,23,0.5);">
-                <h3 style="margin:0 0 8px;font-size:18px">Sign in</h3>
-                <p style="margin:0 0 12px;color:#444;font-size:13px">Enter your username and password to continue.</p>
-                <div style="display:flex;flex-direction:column;gap:8px">
-                    <input id="login-username" placeholder="Username" style="padding:8px;border-radius:6px;border:1px solid #ddd" />
-                    <input id="login-password" type="password" placeholder="Password" style="padding:8px;border-radius:6px;border:1px solid #ddd" />
-                    <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:6px">
-                        <button id="login-cancel" style="padding:8px 12px;border-radius:6px;background:#eee;border:0;">Cancel</button>
-                        <button id="login-submit" style="padding:8px 12px;border-radius:6px;background:linear-gradient(90deg,#6366f1,#a855f7);color:#fff;border:0;">Sign in</button>
-                    </div>
-                    <div id="login-error" style="color:#b91c1c;font-size:13px;display:none;margin-top:8px"></div>
-                </div>
-            </div>
-        `;
+    function setupAuthModal(modalElement){
+        if(!modalElement || modalElement.dataset.authWired === 'true') return;
+        modalElement.dataset.authWired = 'true';
 
-        document.body.appendChild(modal);
+        const overlay = modalElement.closest('.modal-overlay') || modalElement;
+        const closeBtn = modalElement.querySelector('.close-btn');
+        const modeButtons = modalElement.querySelectorAll('[data-mode]');
+        const loginForm = modalElement.querySelector('#loginForm');
+        const signupForm = modalElement.querySelector('#signupForm');
+        const helperText = modalElement.querySelector('#authHelperText');
+        const messageBox = modalElement.querySelector('#authMessage');
 
-        modal.querySelector('#login-cancel').addEventListener('click', ()=>{ modal.remove(); });
-
-        modal.querySelector('#login-submit').addEventListener('click', async ()=>{
-            const u = modal.querySelector('#login-username').value.trim();
-            const p = modal.querySelector('#login-password').value;
-            const err = modal.querySelector('#login-error');
-            err.style.display = 'none';
-            if(!u || !p){ 
-                err.textContent = 'Please enter username and password.'; 
-                err.style.display = 'block'; 
-                return; 
+        const showMessage = (text = '', type = 'error') => {
+            if(!messageBox) return;
+            if(!text){
+                messageBox.style.display = 'none';
+                messageBox.textContent = '';
+                messageBox.className = 'auth-message';
+                return;
             }
-            try{
-                const response = await fetch("http://localhost:5000/login",{
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json"
-                    },
-                    credentials: "include",
-                    body: JSON.stringify({ username: u, password: p })
-                });
-                const result = await response.json();
-                modal.remove();
-                if(result.role === "admin"){
-                    window.location.href = "admin.html";
-                } else {
-                    window.location.href = "user.html";
+            messageBox.textContent = text;
+            messageBox.style.display = 'block';
+            messageBox.className = 'auth-message ' + (type === 'success' ? 'success' : '');
+        };
+
+        const switchMode = (mode) => {
+            modeButtons.forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.mode === mode);
+            });
+            if(loginForm) loginForm.classList.toggle('active', mode === 'login');
+            if(signupForm) signupForm.classList.toggle('active', mode === 'signup');
+            if(helperText) helperText.textContent = mode === 'signup' 
+                ? 'Already have an account? Switch back to Login.'
+                : 'Need an account? Click Sign Up to get started.';
+            showMessage('');
+        };
+
+        modeButtons.forEach(btn => {
+            btn.addEventListener('click', () => switchMode(btn.dataset.mode));
+        });
+
+        if(closeBtn){
+            closeBtn.addEventListener('click', () => {
+                overlay.style.display = 'none';
+            });
+        }
+
+        if(overlay && overlay !== modalElement){
+            overlay.addEventListener('click', (e) => {
+                if(e.target === overlay) overlay.style.display = 'none';
+            });
+        }
+
+        if(loginForm){
+            loginForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const username = loginForm.querySelector('#loginUsername')?.value?.trim();
+                const password = loginForm.querySelector('#loginPassword')?.value || '';
+                
+                if(!username || !password){
+                    showMessage('Please enter username and password.');
+                    return;
                 }
 
-            } catch(e){
-                console.log(e);
-            }
-        });
+                try{
+                    const response = await fetch('http://localhost:5000/login', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        credentials: 'include',
+                        body: JSON.stringify({ username, password })
+                    });
+
+                    const result = await response.json();
+                    if(!response.ok){
+                        throw new Error(result.message || 'Login failed');
+                    }
+
+                    overlay.style.display = 'none';
+                    if(result.role === 'admin'){
+                        window.location.href = 'admin.html';
+                    } else {
+                        window.location.href = 'user.html';
+                    }
+                } catch(err){
+                    showMessage(err.message || 'Login failed. Please try again.');
+                }
+            });
+        }
+
+        if(signupForm){
+            signupForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const email = signupForm.querySelector('#signupEmail')?.value?.trim();
+                const username = signupForm.querySelector('#signupUsername')?.value?.trim();
+                const password = signupForm.querySelector('#signupPassword')?.value || '';
+                const confirm = signupForm.querySelector('#signupConfirm')?.value || '';
+
+                if(!email || !username || !password){
+                    showMessage('Please fill in all fields.');
+                    return;
+                }
+
+                if(password.length < 6){
+                    showMessage('Password must be at least 6 characters.');
+                    return;
+                }
+
+                if(password !== confirm){
+                    showMessage('Passwords do not match.');
+                    return;
+                }
+
+                try{
+                    const response = await fetch('http://localhost:5000/register', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        credentials: 'include',
+                        body: JSON.stringify({ email, username, password })
+                    });
+
+                    const result = await response.json();
+                    if(!response.ok){
+                        throw new Error(result.message || 'Signup failed');
+                    }
+
+                    // Clear signup form
+                    signupForm.reset();
+                    
+                    // Pre-fill login form with username
+                    const loginUsername = loginForm?.querySelector('#loginUsername');
+                    if(loginUsername) loginUsername.value = username;
+
+                    // Show success message and switch to login
+                    showMessage('Account created successfully! Please login to continue.', 'success');
+                    setTimeout(() => {
+                        switchMode('login');
+                    }, 1500);
+                } catch(err){
+                    showMessage(err.message || 'Unable to create account. Please try again.');
+                }
+            });
+        }
+
+        switchMode('login');
     }
     
     document.addEventListener('DOMContentLoaded', async ()=>{
@@ -174,41 +266,11 @@
 
     const username = currentUser?.username || null;
 
-        // Wire static login modal (if present in HTML) to backend login
+        // Wire static login modal (if present in HTML) to auth handlers
         try{
             const staticModal = document.getElementById('loginModal');
             if(staticModal){
-                const closeBtn = document.getElementById('closeLogin');
-                if(closeBtn) closeBtn.addEventListener('click', ()=>{ staticModal.style.display = 'none'; });
-
-                const form = staticModal.querySelector('form');
-                if(form){
-                    form.addEventListener('submit', async (ev)=>{
-                        ev.preventDefault();
-                        const inputs = form.querySelectorAll('input');
-                        const username = inputs[0]?.value?.trim();
-                        const password = inputs[1]?.value || '';
-                        if(!username || !password){
-                            alert('Please provide username and password.');
-                            return;
-                        }
-                        try{
-                            const response = await fetch('http://localhost:5000/login',{
-                                credentials: 'include',
-                                method: 'POST',
-                                headers: {'Content-Type': 'application/json'},
-                                body: JSON.stringify({ username, password })
-                            });
-                            const result = await response.json();
-                            staticModal.style.display = 'none';
-                            if(result.role === 'admin') window.location.href = 'admin.html'; 
-                            else window.location.href = 'user.html';
-                        }catch(err){
-                            console.error(err);
-                            alert('Login failed.');
-                        }
-                    });
-                }
+                setupAuthModal(staticModal);
             }
         }catch(e){ console.log('login modal wiring failed', e); }
 

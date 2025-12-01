@@ -70,37 +70,73 @@ function requireAdmin(req, res, next) {
 
 
 app.post('/register', async (req, res) => {
-  const { username, password, role } = req.body;
-  const hashed = await bcrypt.hash(password, 10);
+  const { email, username, password } = req.body;
+  
+  if (!email || !username || !password) {
+    return res.status(400).json({ message: "Email, username, and password are required" });
+  }
+  
   try {
-    const user = await Login.create({ username, password: hashed, role });
-    res.json({ message: "User created", user });
+    // Check if email or username already exists
+    const existingUser = await Login.findOne({ 
+      $or: [{ email: email.toLowerCase() }, { username }] 
+    });
+    if (existingUser) {
+      return res.status(400).json({ message: "Email or username already registered" });
+    }
+    
+    const hashed = await bcrypt.hash(password, 10);
+    const user = await Login.create({ 
+      email: email.toLowerCase(),
+      username, 
+      password: hashed, 
+      role: "user" 
+    });
+    res.json({ message: "Account created successfully", user: { email: user.email, username: user.username, role: user.role } });
   } catch (e) {
     console.log(e);
-    res.status(400).json({ message: "Problem occured", error: e.message });
+    res.status(400).json({ message: "Unable to create account", error: e.message });
   }
 });
 
-app.post('/login', async (req, res)=> {
+app.post('/login', async (req, res) => {
   const { username, password } = req.body;
-  const user = await Login.findOne({username});
-  if(!user) return res.status(404).json({message: "User not found"});
-  const isMatch = await bcrypt.compare(password, user.password);
-  if(!isMatch) return res.status(400).json({message: "Wrong password"});
-  req.session.user = {
-    username: user.username,
-    role: user.role
-  };
-  // Explicitly save session
-  req.session.save((err) => {
-    if (err) {
-      return res.status(500).json({ message: "Session save failed" });
+  
+  if (!username || !password) {
+    return res.status(400).json({ message: "Username and password are required" });
+  }
+  
+  try {
+    const user = await Login.findOne({ username });
+    if (!user) {
+      return res.status(404).json({ message: "Username not found" });
     }
-    return res.status(200).json({
+    
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) {
+      return res.status(400).json({ message: "Incorrect password" });
+    }
+    
+    req.session.user = {
       username: user.username,
+      email: user.email,
       role: user.role
+    };
+    
+    req.session.save((err) => {
+      if (err) {
+        return res.status(500).json({ message: "Session save failed" });
+      }
+      return res.status(200).json({
+        username: user.username,
+        email: user.email,
+        role: user.role
+      });
     });
-  });
+  } catch (e) {
+    console.log(e);
+    res.status(500).json({ message: "Login error", error: e.message });
+  }
 });
 
 

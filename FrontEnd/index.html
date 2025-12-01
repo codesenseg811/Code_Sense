@@ -5,6 +5,53 @@
     <title>CodeSense</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="stylesheet" href="styles.css" />
+    <style>
+      .auth-toggle {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 10px;
+        margin-bottom: 20px;
+      }
+      .auth-toggle button {
+        padding: 10px 0;
+        border-radius: 12px;
+        border: 1px solid rgba(99, 102, 241, 0.3);
+        background: #f8f9ff;
+        color: #4b5563;
+        font-weight: 600;
+        cursor: pointer;
+        transition: 0.2s;
+      }
+      .auth-toggle button.active {
+        background: linear-gradient(90deg, #6366f1, #a855f7);
+        color: #ffffff;
+        border-color: transparent;
+      }
+      .auth-form {
+        display: none;
+        flex-direction: column;
+        width: 100%;
+      }
+      .auth-form.active {
+        display: flex;
+      }
+      .auth-helper {
+        font-size: 13px;
+        color: #6b7280;
+        text-align: center;
+        margin-top: 10px;
+      }
+      .auth-message {
+        margin-top: 8px;
+        font-size: 13px;
+        text-align: center;
+        color: #dc2626;
+        display: none;
+      }
+      .auth-message.success {
+        color: #059669;
+      }
+    </style>
   </head>
   <body>
     <header>
@@ -100,13 +147,29 @@ function fibonacci(n) {
     <div id="loginModal" class="modal-overlay">
       <div class="modal">
         <span class="close-btn" id="closeLogin">&times;</span>
-        <h2>Login</h2>
+        <h2>Welcome back</h2>
 
-        <form>
-          <input type="text" placeholder="Username" required /><br /><br />
-          <input type="password" placeholder="Password" required /><br /><br />
-          <button type="submit">Login</button>
+        <div class="auth-toggle">
+          <button type="button" class="auth-mode-btn active" data-mode="login">Login</button>
+          <button type="button" class="auth-mode-btn" data-mode="signup">Sign Up</button>
+        </div>
+
+        <form id="loginForm" class="auth-form active">
+          <input type="text" id="loginUsername" placeholder="Username" required />
+          <input type="password" id="loginPassword" placeholder="Password" required />
+          <button type="submit" class="submit-btn">Login</button>
         </form>
+
+        <form id="signupForm" class="auth-form">
+          <input type="email" id="signupEmail" placeholder="Email address" required />
+          <input type="text" id="signupUsername" placeholder="Username" required />
+          <input type="password" id="signupPassword" placeholder="Password" required />
+          <input type="password" id="signupConfirm" placeholder="Re-enter Password" required />
+          <button type="submit" class="submit-btn">Create Account</button>
+        </form>
+
+        <p class="auth-helper" id="authHelperText">Need an account? Click Sign Up to get started.</p>
+        <div class="auth-message" id="authMessage"></div>
       </div>
     </div>
     <footer class="site-footer" role="contentinfo" aria-label="Site footer">
