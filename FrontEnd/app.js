@@ -153,7 +153,8 @@
     
     document.addEventListener('DOMContentLoaded', async ()=>{
 
-    try { initThemeControls(); } catch(e){}
+    // Always initialize theme controls (works on all pages)
+    try { initThemeControls(); } catch(e){ console.log('Theme init failed:', e); }
 
     const path = window.location.pathname;
     const isDashboard =

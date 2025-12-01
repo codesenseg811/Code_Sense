@@ -27,6 +27,24 @@
   --font-main: system-ui, -apple-system, BlinkMacSystemFont, "Inter", sans-serif;
 }
 
+/* Dark mode */
+[data-theme="dark"] {
+  --bg-body: #0f172a;
+  --bg-card: #1e293b;
+  --bg-sidebar: #1e293b;
+  --border-subtle: #334155;
+  --text-main: #f1f5f9;
+  --text-muted: #94a3b8;
+  --accent: #818cf8;
+  --accent-soft: #312e81;
+  --accent-strong: #6366f1;
+  --success: #4ade80;
+  --warning: #facc15;
+  --danger: #f87171;
+  --shadow-soft: 0 18px 45px rgba(0, 0, 0, 0.4);
+  --shadow-light: 0 8px 20px rgba(0, 0, 0, 0.3);
+}
+
 html,
 body {
   height: 100%;
@@ -726,3 +744,407 @@ body:not(:has(> aside)) footer small {
 .aside-footer a:focus {
   color: var(--accent-strong);
 }
+
+/* ===== Dark Mode Theme Overrides ===== */
+[data-theme="dark"] body {
+  background: var(--bg-body);
+  color: var(--text-main);
+}
+
+[data-theme="dark"] aside {
+  background: var(--bg-sidebar);
+  border-right-color: var(--border-subtle);
+}
+
+[data-theme="dark"] aside h1 {
+  color: var(--accent-strong);
+}
+
+[data-theme="dark"] aside p {
+  color: var(--text-muted);
+}
+
+[data-theme="dark"] aside nav a {
+  color: var(--text-muted);
+}
+
+[data-theme="dark"] aside nav a:hover,
+[data-theme="dark"] aside nav a:focus {
+  background: var(--accent-soft);
+  color: var(--accent-strong);
+}
+
+[data-theme="dark"] aside footer,
+[data-theme="dark"] .aside-footer {
+  border-top-color: var(--border-subtle);
+}
+
+[data-theme="dark"] main {
+  background: var(--bg-body);
+  color: var(--text-main);
+}
+
+[data-theme="dark"] main header {
+  background: var(--bg-body);
+}
+
+[data-theme="dark"] main header h1,
+[data-theme="dark"] main header p {
+  color: var(--text-main);
+}
+
+[data-theme="dark"] main header a {
+  background: var(--bg-card);
+  color: var(--text-main);
+  border-color: var(--border-subtle);
+}
+
+[data-theme="dark"] main header a:hover {
+  background: var(--accent-gradient);
+  color: #fff;
+}
+
+[data-theme="dark"] main > div > div {
+  background: var(--bg-card);
+  box-shadow: var(--shadow-light);
+}
+
+[data-theme="dark"] main > div > div p {
+  color: var(--text-main);
+}
+
+[data-theme="dark"] main > div > div h,
+[data-theme="dark"] main > div > div h2 {
+  color: var(--text-muted);
+}
+
+[data-theme="dark"] main > div > p {
+  color: var(--text-main);
+}
+
+[data-theme="dark"] main h2 {
+  color: var(--text-main);
+}
+
+[data-theme="dark"] .chart-card {
+  background: var(--bg-card);
+  box-shadow: var(--shadow-light);
+}
+
+[data-theme="dark"] table {
+  background: var(--bg-card);
+  color: var(--text-main);
+}
+
+[data-theme="dark"] thead tr {
+  background: rgba(0, 0, 0, 0.3);
+}
+
+[data-theme="dark"] th,
+[data-theme="dark"] td {
+  color: var(--text-main);
+  border-bottom-color: var(--border-subtle);
+}
+
+[data-theme="dark"] tbody tr:hover {
+  background: rgba(99, 102, 241, 0.15);
+}
+
+[data-theme="dark"] table button {
+  color: var(--danger);
+}
+
+[data-theme="dark"] section {
+  background: transparent;
+  color: var(--text-main);
+}
+
+[data-theme="dark"] section > div {
+  background: var(--bg-card);
+  box-shadow: var(--shadow-light);
+}
+
+[data-theme="dark"] section > div > div {
+  background: var(--bg-card);
+  border-color: var(--border-subtle);
+  color: var(--text-main);
+}
+
+[data-theme="dark"] section > div > div h4,
+[data-theme="dark"] section > div h2 {
+  color: var(--text-main);
+}
+
+[data-theme="dark"] section > div > div p,
+[data-theme="dark"] section > div p {
+  color: var(--text-muted);
+}
+
+[data-theme="dark"] section > div > div span {
+  color: var(--text-muted);
+}
+
+[data-theme="dark"] pre {
+  background: var(--bg-card);
+  color: var(--text-main);
+  border-color: var(--border-subtle);
+}
+
+[data-theme="dark"] .modal {
+  background: var(--bg-card);
+  color: var(--text-main);
+}
+
+[data-theme="dark"] .modal input {
+  background: var(--bg-body);
+  border-color: var(--border-subtle);
+  color: var(--text-main);
+}
+
+[data-theme="dark"] .modal input::placeholder {
+  color: var(--text-muted);
+}
+
+[data-theme="dark"] .modal-overlay {
+  background: rgba(0, 0, 0, 0.65);
+}
+
+[data-theme="dark"] footer {
+  background: var(--bg-body);
+  color: var(--text-main);
+  border-top-color: var(--border-subtle);
+}
+
+[data-theme="dark"] footer h4 {
+  color: var(--text-main);
+}
+
+[data-theme="dark"] footer p {
+  color: var(--text-muted);
+}
+
+[data-theme="dark"] footer a {
+  color: var(--accent);
+}
+
+[data-theme="dark"] footer a:hover {
+  color: var(--accent-strong);
+}
+
+[data-theme="dark"] select,
+[data-theme="dark"] input[type="text"],
+[data-theme="dark"] input[type="number"] {
+  background: var(--bg-body);
+  color: var(--text-main);
+  border-color: var(--border-subtle);
+}
+
+[data-theme="dark"] select:focus,
+[data-theme="dark"] input[type="text"]:focus,
+[data-theme="dark"] input[type="number"]:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 1px rgba(99, 102, 241, 0.2);
+}
+
+[data-theme="dark"] input[type="checkbox"] {
+  border-color: var(--border-subtle);
+}
+
+[data-theme="dark"] button {
+  background: var(--accent-gradient);
+  color: #fff;
+}
+
+[data-theme="dark"] button:hover {
+  opacity: 0.92;
+}
+
+[data-theme="dark"] .icon-btn {
+  background: var(--bg-card);
+  color: var(--text-muted);
+  border-color: var(--border-subtle);
+}
+
+[data-theme="dark"] .icon-btn:hover {
+  background: var(--accent-soft);
+  color: var(--accent-strong);
+}
+
+/* ===== Index Page Specific Styles ===== */
+body {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-height: 100vh;
+}
+
+header nav {
+  width: 100%;
+  max-width: 1100px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 24px;
+  position: relative;
+}
+
+.top-actions {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+#pageContent {
+  width: 100%;
+  max-width: 1100px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 32px;
+}
+
+#pageContent section {
+  width: 100%;
+  max-width: 900px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 12px;
+}
+
+.site-footer__inner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 18px;
+  width: 100%;
+}
+
+.site-footer__bar {
+  width: 100%;
+  max-width: 1100px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.modal-overlay {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(8px);
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.modal {
+  background: var(--bg-card);
+  width: 420px;
+  padding: 35px 40px;
+  border-radius: 24px;
+  box-shadow: 0 18px 45px rgba(0, 0, 0, 0.15);
+  animation: modalPop 0.28s ease-out;
+  position: relative;
+}
+
+@keyframes modalPop {
+  from {
+    opacity: 0;
+    transform: scale(0.85) translateY(15px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.close-btn {
+  position: absolute;
+  top: 14px;
+  right: 18px;
+  font-size: 22px;
+  cursor: pointer;
+  color: #777;
+  transition: 0.2s;
+}
+
+[data-theme="dark"] .close-btn {
+  color: #aaa;
+}
+
+.close-btn:hover {
+  color: #333;
+}
+
+[data-theme="dark"] .close-btn:hover {
+  color: #eee;
+}
+
+.modal h2 {
+  font-size: 26px;
+  font-weight: 700;
+  margin-bottom: 22px;
+  background: linear-gradient(90deg, #6366f1, #a855f7);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.modal input {
+  width: 100%;
+  padding: 14px 16px;
+  margin-bottom: 15px;
+  border-radius: 14px;
+  border: 1px solid var(--border-subtle);
+  background: var(--bg-body);
+  font-size: 15px;
+  transition: 0.2s;
+  outline: none;
+  color: var(--text-main);
+}
+
+.modal input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(168, 85, 247, 0.15);
+}
+
+.modal input::placeholder {
+  color: var(--text-muted);
+}
+
+.modal button {
+  width: 100%;
+  padding: 14px;
+  margin-top: 5px;
+  background: linear-gradient(to right, #6366f1, #a855f7);
+  color: white;
+  border: none;
+  border-radius: 14px;
+  font-size: 17px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: 0.25s;
+}
+
+.modal button:hover {
+  opacity: 0.92;
+  transform: translateY(-1px);
+}
+
+.blur {
+  filter: blur(6px);
+  transition: 0.3s ease;
+}
+
