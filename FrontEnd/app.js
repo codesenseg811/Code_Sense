@@ -47,10 +47,13 @@
             if(e.key === THEME_KEY && e.newValue) applyTheme(e.newValue);
         });
     }
+const API_BASE = window.location.hostname === "127.0.0.1"
+    ? "http://127.0.0.1:5000"
+    : "http://localhost:5000";
 
     async function getSessionUser(){
     try {
-        const res = await fetch("http://localhost:5000/me", {
+        const res = await fetch(`${API_BASE}/me`, {
             credentials: "include"
         });
         return res.ok ? res.json() : null;
@@ -62,7 +65,7 @@
 
     async function logout(){
     try{
-        await fetch("http://localhost:5000/logout", {
+        await fetch(`${API_BASE}/logout`, {
             method: "POST",
             credentials: "include"
         });
@@ -162,7 +165,7 @@
                 }
 
                 try{
-                    const response = await fetch('http://localhost:5000/login', {
+                    const response = await fetch(`${API_BASE}/login`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         credentials: 'include',
@@ -210,7 +213,7 @@
                 }
 
                 try{
-                    const response = await fetch('http://localhost:5000/register', {
+                    const response = await fetch(`${API_BASE}/register`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         credentials: 'include',
@@ -316,7 +319,7 @@
 
                 if(!action.trim()) return;
 
-                await fetch("http://localhost:5000/add-history",{
+                await fetch(`${API_BASE}/add-history`,{
                     credentials: "include",
                     method: "POST",
                     headers: {"Content-Type": "application/json"},
@@ -358,7 +361,7 @@
                 }
 
                 try {
-                    const res = await fetch("http://localhost:5000/api/explain", {
+                    const res = await fetch(`${API_BASE}/api/explain`, {
                         credentials: "include",
                         method: "POST",
                         headers: { "Content-Type": "application/json" },
@@ -437,7 +440,7 @@
         const tblbody = document.getElementById("user_history");
         if(tblbody){
             try{
-                const response = await fetch("http://localhost:5000/user-history",{
+                const response = await fetch(`${API_BASE}/user-history`,{
                     credentials: "include",
                     method: "POST",
                     headers: {"Content-Type": "application/json"},
@@ -463,7 +466,7 @@
         const tbody=document.getElementById("admin_user_history");
         if(tbody){
             try{
-                const response=await fetch("http://localhost:5000/admin-history",{
+                const response=await fetch(`${API_BASE}/admin-history`,{
                     credentials: "include",
                     method: "GET",
                     headers: {"Content-Type": "application/json"}
@@ -501,7 +504,7 @@
 
                     // Active users: fetch from /get-users (server-side user list)
                     try{
-                        const resUsers = await fetch('http://localhost:5000/get-users',{ credentials: 'include' });
+                        const resUsers = await fetch(`${API_BASE}/get-users`,{ credentials: 'include' });
                         if(resUsers.ok){
                             const users = await resUsers.json();
                             const activeEl = document.getElementById('active-users');
@@ -631,7 +634,7 @@
         const tablebody = document.getElementById("admin_user_data");
         if(!tablebody) return;
         try{
-            const res = await fetch("http://localhost:5000/get-users",{ credentials: 'include' });
+            const res = await fetch(`${API_BASE}/get-users`,{ credentials: 'include' });
             const result = await res.json();
             tablebody.innerHTML="";
             result.forEach(user=>{
@@ -650,7 +653,7 @@
                     const username=btn.dataset.username;
                     if(!confirm(`Delete user ${username}`)) return;
                     try{
-                        const response=await fetch("http://localhost:5000/delete-user",{
+                        const response=await fetch(`${API_BASE}/delete-user`,{
                             credentials: "include",
                             method:"POST",
                             headers:{

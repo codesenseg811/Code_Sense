@@ -21,7 +21,8 @@ const redisClient = new Redis();
 
 // CORS — MUST come BEFORE routes
 app.use(cors({
-    origin: "http://localhost:5502",
+    origin:[ "http://localhost:5502",
+        "http://127.0.0.1:5502"],
     credentials: true,
 }));
 
@@ -34,6 +35,8 @@ app.use(cors({
 // });
 
 // Session config
+app.set("trust proxy", 1);  // <-- IMPORTANT for 127.0.0.1 to work
+
 app.use(session({
   store: new RedisStore({ client: redisClient }),
   secret: "super-secret-key",
