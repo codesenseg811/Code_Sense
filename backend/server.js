@@ -170,70 +170,46 @@ app.get('/get-users',requireAdmin, async (req,res) => {
 })
 
 // Admin: bulk email endpoint
+const { queueEmail } = require("./taskQueue");
+
 app.post('/admin/bulk-email', requireAdmin, async (req, res) => {
   const { recipients, subject, message } = req.body;
-  if (!subject || !message) {
-    return res.status(400).json({ message: 'Subject and message are required' });
+
+  if (!subject || !message)
+    return res.status(400).json({ message: 'Subject and message required' });
+
+  const adminEmail = req.session.user.email;
+
+  let recipientList = [];
+
+  if (!recipients || recipients === 'all') {
+    const users = await Login.find({}, { email: 1, _id: 0 });
+    recipientList = users.map(u => u.email);
+  } else if (Array.isArray(recipients)) {
+    recipientList = recipients;
   }
 
-  try {
-    let recipientList = [];
+  if (recipientList.length === 0)
+    return res.status(400).json({ message: "No recipients" });
 
-    if (!recipients || recipients === 'all') {
-      // get all user emails
-      const users = await Login.find({}, { email: 1, _id: 0 });
-      recipientList = users.map(u => u.email).filter(Boolean);
-    } else if (Array.isArray(recipients)) {
-      recipientList = recipients.slice();
-    } else if (typeof recipients === 'string') {
-      recipientList = [recipients];
-    }
-
-    if (!recipientList || recipientList.length === 0) {
-      return res.status(400).json({ message: 'No recipients specified' });
-    }
-
-    // Build transporter from env (SMTP) — fall back to jsonTransport for local/dry-run
-    const { SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS, FROM_EMAIL } = process.env;
-    let transporter;
-    if (SMTP_HOST && SMTP_PORT && SMTP_USER && SMTP_PASS) {
-      transporter = nodemailer.createTransport({
-        host: SMTP_HOST,
-        port: Number(SMTP_PORT),
-        secure: Number(SMTP_PORT) === 465,
-        auth: { user: SMTP_USER, pass: SMTP_PASS }
-      });
-    } else {
-      transporter = nodemailer.createTransport({ jsonTransport: true });
-    }
-
-    const mailOptions = {
-      from: FROM_EMAIL || SMTP_USER || 'no-reply@codesense.local',
-      bcc: recipientList.join(','),
+  recipientList.forEach(email => {
+    queueEmail(
+      email,
       subject,
-      text: message,
-      html: message.replace(/\n/g, '<br>')
-    };
+      message.replace(/\n/g, "<br>"),
+      adminEmail
+    );
+  });
 
-    const info = await transporter.sendMail(mailOptions);
+  await User_history.create({
+    username: req.session.user.username,
+    role: req.session.user.role,
+    action: `Bulk email queued: ${subject}`,
+    language: "email"
+});
 
-    // Save a history entry
-    try {
-      await User_history.create({
-        username: req.session.user.username,
-        role: req.session.user.role,
-        action: `Bulk email sent: ${subject}`,
-        language: ''
-      });
-    } catch (histErr) {
-      console.warn('Failed to save email history:', histErr?.message || histErr);
-    }
 
-    return res.json({ message: 'Emails sent', info });
-  } catch (err) {
-    console.error('Bulk email failed:', err);
-    return res.status(500).json({ message: 'Failed to send emails', error: err.message });
-  }
+  return res.json({ message: "Emails queued successfully (Celery worker will send them)" });
 });
 
 app.post("/delete-user",requireAdmin,async(req,res)=>{

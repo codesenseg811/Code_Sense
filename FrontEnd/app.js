@@ -293,15 +293,22 @@ const API_BASE = window.location.hostname === "127.0.0.1"
 
         const goBtn = document.getElementById('go-dashboard');
         if(goBtn) goBtn.addEventListener('click', async ()=>{
+            // Always show the login modal first so users see the auth UI after logout.
+            // If a session is active the modal's auth handlers will redirect after successful check.
             try{
-                const current = await getSessionUser();
-                if(current){
-                    if(current.role === 'admin') window.location.href = 'admin.html';
-                    else window.location.href = 'user.html';
-                    return;
-                }
-            }catch(err){/* ignore and show modal */}
-            showLoginModal(goBtn);
+                showLoginModal(goBtn);
+            }catch(e){
+                // fallback: in case modal isn't available, attempt session check and redirect
+                try{
+                    const current = await getSessionUser();
+                    if(current){
+                        if(current.role === 'admin') window.location.href = 'admin.html';
+                        else window.location.href = 'user.html';
+                        return;
+                    }
+                }catch(err){}
+                showLoginModal(goBtn);
+            }
         });
 
         const tryNow = document.getElementById('try-now');
