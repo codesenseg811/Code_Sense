@@ -680,15 +680,21 @@ body:not(:has(> aside)) footer small {
 .site-footer__inner {
   max-width: 1120px;
   margin: 0 auto;
-  display: grid;
-  grid-template-columns: 1.6fr 1fr 1fr 1fr;
-  gap: 20px;
-  align-items: start;
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 40px;
+}
+.footer-column {
+  flex: 1;
+  min-width: 0;
 }
 .footer-column h4 {
   font-size: 0.95rem;
-  margin-bottom: 8px;
+  margin-bottom: 12px;
   color: var(--text-main);
+  font-weight: 600;
 }
 .footer-column ul {
   list-style: none;
@@ -696,11 +702,12 @@ body:not(:has(> aside)) footer small {
   padding: 0;
 }
 .footer-column ul li {
-  margin-bottom: 8px;
+  margin-bottom: 10px;
 }
 .footer-column a {
   color: var(--text-muted);
   text-decoration: none;
+  font-size: 0.9rem;
   transition: color 0.15s ease;
 }
 .footer-column a:hover,
@@ -712,11 +719,12 @@ body:not(:has(> aside)) footer small {
   font-weight: 700;
   font-size: 1.2rem;
   color: var(--accent-strong);
-  margin-bottom: 6px;
+  margin-bottom: 8px;
 }
 .footer-brand .brand-tag {
   color: var(--text-muted);
-  font-size: 0.95rem;
+  font-size: 0.9rem;
+  line-height: 1.5;
 }
 .site-footer__bar {
   max-width: 1120px;
@@ -734,20 +742,28 @@ body:not(:has(> aside)) footer small {
   text-decoration: none;
 }
 
-@media (max-width: 880px) {
+@media (max-width: 900px) {
   .site-footer__inner {
-    grid-template-columns: 1fr 1fr;
+    flex-direction: row;
+    gap: 30px;
+  }
+  .footer-column {
+    flex: 0 1 calc(33.333% - 20px);
+  }
+}
+
+@media (max-width: 640px) {
+  .site-footer__inner {
+    flex-direction: column;
+    gap: 24px;
+  }
+  .footer-column {
+    flex: 1 1 auto;
   }
   .site-footer__bar {
     flex-direction: column;
     align-items: flex-start;
     gap: 8px;
-  }
-}
-
-@media (max-width: 520px) {
-  .site-footer__inner {
-    grid-template-columns: 1fr;
   }
 }
 
@@ -1414,14 +1430,6 @@ header nav {
   align-items: center;
   text-align: center;
   gap: 12px;
-}
-
-.site-footer__inner {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 18px;
-  width: 100%;
 }
 
 .site-footer__bar {
