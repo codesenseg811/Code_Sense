@@ -47,7 +47,6 @@
               <select id="recipient-select" required>
                 <option value="">-- Select Recipients --</option>
                 <option value="all">All Users</option>
-                <option value="active">Active Users Only</option>
                 <option value="inactive">Inactive Users</option>
                 <option value="custom">Custom Selection</option>
               </select>
@@ -118,30 +117,15 @@
                 <th>Status</th>
               </tr>
             </thead>
-            <tbody>
-              <tr>
-                <td>Welcome to CodeSense</td>
-                <td>All Users (150)</td>
-                <td>Nov 28, 2024 10:30 AM</td>
-                <td><span class="badge badge-success">Sent</span></td>
-              </tr>
-              <tr>
-                <td>System Maintenance Notice</td>
-                <td>Active Users (120)</td>
-                <td>Nov 25, 2024 3:45 PM</td>
-                <td><span class="badge badge-success">Sent</span></td>
-              </tr>
-              <tr>
-                <td>Feature Update</td>
-                <td>Custom (45)</td>
-                <td>Nov 20, 2024 9:15 AM</td>
-                <td><span class="badge badge-info">Pending</span></td>
-              </tr>
+            <tbody id="email-history-body">
+              <!-- populated by admin_email.js -->
             </tbody>
           </table>
+          <!-- Active usage chart removed as requested -->
         </div>
       </section>
     </main>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="app.js"></script>
     <script src="admin_email.js"></script>
   </body>

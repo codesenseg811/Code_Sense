@@ -5,6 +5,19 @@ const axios = require("axios");
 connectDB();
 const Login = require("./models/User.js");
 const User_history = require("./models/History.js");
+const EmailHistory = require("./models/EmailHistory.js");
+const client = require('prom-client');
+// Prometheus counters for languages and user actions
+const languageCounter = new client.Counter({
+  name: 'app_language_requests_total',
+  help: 'Total number of requests per language (from history)',
+  labelNames: ['language']
+});
+const userActionsCounter = new client.Counter({
+  name: 'app_user_actions_total',
+  help: 'Total number of user actions recorded',
+  labelNames: ['username']
+});
 const bcrypt = require("bcrypt");
 require("dotenv").config();
 
@@ -195,16 +208,82 @@ app.post('/admin/bulk-email', requireAdmin, async (req, res) => {
       adminEmail
     );
   });
+  // Create an EmailHistory record (pending) so admin UI can show recent sends
+  try {
+    await EmailHistory.create({
+      subject,
+      recipients: recipientList.slice(0, 200), // store up to 200 addresses for reference
+      recipientsCount: recipientList.length,
+      status: 'pending',
+      sentBy: req.session.user.username
+    });
+  } catch (e) {
+    console.warn('Failed to record email history:', e?.message || e);
+  }
 
   await User_history.create({
     username: req.session.user.username,
     role: req.session.user.role,
     action: `Bulk email queued: ${subject}`,
     language: "email"
+  });
+
+  return res.json({ message: "Emails queued successfully (worker will send them)" });
 });
 
+// Return recent email history for admin UI
+app.get('/admin/email-history', requireAdmin, async (req, res) => {
+  try {
+    const rows = await EmailHistory.find({}).sort({ sentAt: -1 }).limit(50).lean();
+    res.json(rows);
+  } catch (e) {
+    res.status(500).json({ message: 'Unable to fetch email history', error: e.message });
+  }
+});
 
-  return res.json({ message: "Emails queued successfully (Celery worker will send them)" });
+// Active usage: aggregate number of history actions per day (last 14 days)
+app.get('/admin/active-usage', requireAdmin, async (req, res) => {
+  try {
+    const days = parseInt(req.query.days || '14', 10);
+    const since = new Date();
+    since.setDate(since.getDate() - days + 1);
+
+    const agg = await User_history.aggregate([
+      { $match: { time: { $gte: since } } },
+      { $group: {
+          _id: { $dateToString: { format: "%Y-%m-%d", date: "$time" } },
+          count: { $sum: 1 }
+      }},
+      { $sort: { _id: 1 } }
+    ]);
+
+    // Build continuous series for the last `days` days
+    const labels = [];
+    const counts = [];
+    for (let i = 0; i < days; i++) {
+      const d = new Date();
+      d.setDate(d.getDate() - (days - 1 - i));
+      const key = d.toISOString().slice(0,10);
+      labels.push(key);
+      const found = agg.find(a=>a._id === key);
+      counts.push(found ? found.count : 0);
+    }
+
+    res.json({ labels, counts });
+  } catch (e) {
+    res.status(500).json({ message: 'Unable to compute active usage', error: e.message });
+  }
+});
+
+// Prometheus metrics
+client.collectDefaultMetrics();
+app.get('/metrics', async (req, res) => {
+  try {
+    res.set('Content-Type', client.register.contentType);
+    res.end(await client.register.metrics());
+  } catch (err) {
+    res.status(500).end(err.message);
+  }
 });
 
 app.post("/delete-user",requireAdmin,async(req,res)=>{
@@ -219,6 +298,13 @@ app.post('/add-history', async (req, res) => {
   const { username, role, action, language } = req.body;
   try {
     const history = await User_history.create({ username, role, action, language });
+    // Update Prometheus counters
+    try{
+      const lang = (language || 'unknown').toString();
+      languageCounter.inc({ language: lang }, 1);
+      userActionsCounter.inc({ username: username }, 1);
+    }catch(e){ console.warn('metric update failed', e); }
+
     res.json({ message: `History saved for: ${username}`, history });
   } catch (e) {
     console.log(e);

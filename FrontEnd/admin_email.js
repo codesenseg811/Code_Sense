@@ -40,6 +40,80 @@
     });
   }
 
+  async function fetchEmailHistory(){
+    try{
+      const res = await fetch(`${API_BASE}/admin/email-history`, { credentials: 'include' });
+      if(!res.ok) throw new Error('Failed to fetch email history');
+      return await res.json();
+    }catch(e){
+      console.error('fetchEmailHistory error', e);
+      return [];
+    }
+  }
+
+  function renderEmailHistory(rows){
+    const tbody = document.getElementById('email-history-body');
+    if(!tbody) return;
+    tbody.innerHTML = '';
+    if(!rows || rows.length === 0){
+      tbody.innerHTML = '<tr><td colspan="4" class="placeholder">No email history yet.</td></tr>';
+      return;
+    }
+
+    rows.forEach(r => {
+      const tr = document.createElement('tr');
+      const subj = document.createElement('td'); subj.textContent = r.subject || '—';
+      const rec = document.createElement('td'); rec.textContent = `${r.recipientsCount || 0}` + (Array.isArray(r.recipients) && r.recipients.length>0 ? ` (${r.recipients.length} shown)` : '');
+      const date = document.createElement('td'); date.textContent = new Date(r.sentAt || Date.now()).toLocaleString();
+      const status = document.createElement('td');
+      const badge = document.createElement('span'); badge.className = 'badge';
+      badge.textContent = (r.status || 'pending');
+      if(r.status === 'sent') badge.classList.add('badge-success');
+      if(r.status === 'failed') badge.classList.add('badge-danger');
+      if(r.status === 'pending') badge.classList.add('badge-info');
+      status.appendChild(badge);
+
+      tr.appendChild(subj);
+      tr.appendChild(rec);
+      tr.appendChild(date);
+      tr.appendChild(status);
+      tbody.appendChild(tr);
+    });
+  }
+
+  async function fetchActiveUsage(days = 14){
+    try{
+      const res = await fetch(`${API_BASE}/admin/active-usage?days=${days}`, { credentials: 'include' });
+      if(!res.ok) throw new Error('Failed to fetch active usage');
+      return await res.json();
+    }catch(e){
+      console.error('fetchActiveUsage error', e);
+      return { labels: [], counts: [] };
+    }
+  }
+
+  function renderActiveChart(labels, counts){
+    const ctx = document.getElementById('active-usage-chart');
+    if(!ctx) return;
+    try{
+      if(window._activeChart) window._activeChart.destroy();
+      window._activeChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: labels,
+          datasets: [{
+            label: 'Actions per day',
+            data: counts,
+            borderColor: '#4f46e5',
+            backgroundColor: 'rgba(79,70,229,0.08)',
+            fill: true
+          }]
+        },
+        options: { responsive: true, maintainAspectRatio: false }
+      });
+    }catch(e){ console.error('Chart error', e); }
+  }
+
   function wireControls(){
     const selectAll = document.getElementById('select-all-btn');
     const recipientSelect = document.getElementById('recipient-select');
@@ -64,6 +138,23 @@
         checks.forEach(c=> c.checked = !allChecked);
       });
     }
+
+    // Preview live update
+    const subjectEl = document.getElementById('email-subject');
+    const bodyEl = document.getElementById('email-body');
+    const previewSubj = document.getElementById('preview-subject');
+    const previewBody = document.getElementById('preview-body');
+    function updatePreview(){
+      if(previewSubj) previewSubj.textContent = subjectEl?.value || '(Subject will appear here)';
+      if(previewBody){
+        const text = bodyEl?.value || '(Email body will appear here)';
+        const esc = String(text).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+        previewBody.innerHTML = esc.replace(/\n/g,'<br>');
+      }
+    }
+    subjectEl?.addEventListener('input', updatePreview);
+    bodyEl?.addEventListener('input', updatePreview);
+    updatePreview();
 
     const form = document.getElementById('bulk-email-form');
     if(form){
@@ -112,6 +203,13 @@
           alert('Emails sent successfully');
           form.reset();
           if(customSelection) customSelection.style.display = 'none';
+          // refresh history and chart
+          try{
+            const rows = await fetchEmailHistory();
+            renderEmailHistory(rows);
+            const usage = await fetchActiveUsage();
+            renderActiveChart(usage.labels, usage.counts);
+          }catch(e){ console.error('refresh failed', e); }
         }catch(err){
           console.error('Send failed', err);
           alert('Send failed: ' + (err.message || 'Unknown error'));
@@ -124,5 +222,12 @@
     const users = await fetchUsers();
     renderUsers(users);
     wireControls();
+    // load history and active usage chart
+    try{
+      const rows = await fetchEmailHistory();
+      renderEmailHistory(rows);
+      const usage = await fetchActiveUsage();
+      renderActiveChart(usage.labels, usage.counts);
+    }catch(e){ console.error(e); }
   });
 })();
