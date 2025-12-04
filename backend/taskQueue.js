@@ -1,18 +1,31 @@
 const { spawn } = require("child_process");
+const path = require("path");
 
 function queueEmail(to, subject, html, adminEmail) {
   const pythonCommand = "C:\\Users\\madha\\AppData\\Local\\Programs\\Python\\Python310\\python.exe";
 
-  const process = spawn(pythonCommand, [
-    "./python_tasks/add_task.py",
-    to,
-    subject,
-    html,
-    adminEmail
-  ]);
+  const backendPath = __dirname;  // folder where python_tasks exists
 
-  process.stdout.on("data", d => console.log("PYTHON:", d.toString()));
-  process.stderr.on("data", d => console.error("ERR:", d.toString()));
+  const scriptPath = path.join(__dirname, "python_tasks", "enqueue_email.py");
+
+  const child = spawn(
+    pythonCommand,
+    [scriptPath, to, subject, html, adminEmail],
+    {
+      env: {
+        ...process.env,      // FIXED — previously broken
+        PYTHONPATH: backendPath
+      }
+    }
+  );
+
+  child.stdout.on("data", data => {
+    console.log("PY:", data.toString());
+  });
+
+  child.stderr.on("data", data => {
+    console.error("PY ERR:", data.toString());
+  });
 }
 
 module.exports = { queueEmail };

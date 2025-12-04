@@ -103,45 +103,36 @@ app.post('/register', async (req, res) => {
   }
 });
 
+const generateToken = require("./middleware/generateToken");
+
 app.post('/login', async (req, res) => {
   const { username, password } = req.body;
-  
-  if (!username || !password) {
-    return res.status(400).json({ message: "Username and password are required" });
-  }
-  
-  try {
-    const user = await Login.findOne({ username });
-    if (!user) {
-      return res.status(404).json({ message: "Username not found" });
-    }
-    
-    const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch) {
-      return res.status(400).json({ message: "Incorrect password" });
-    }
-    
-    req.session.user = {
+
+  const user = await Login.findOne({ username });
+  if (!user) return res.status(404).json({ message: "Username not found" });
+
+  const isMatch = await bcrypt.compare(password, user.password);
+  if (!isMatch) return res.status(400).json({ message: "Incorrect password" });
+
+  // Keep your Redis session
+  req.session.user = {
+    username: user.username,
+    email: user.email,
+    role: user.role
+  };
+
+  const token = generateToken(user); // NEW
+
+  req.session.save(() => {
+    return res.json({
+      token,                      // NEW
       username: user.username,
       email: user.email,
       role: user.role
-    };
-    
-    req.session.save((err) => {
-      if (err) {
-        return res.status(500).json({ message: "Session save failed" });
-      }
-      return res.status(200).json({
-        username: user.username,
-        email: user.email,
-        role: user.role
-      });
     });
-  } catch (e) {
-    console.log(e);
-    res.status(500).json({ message: "Login error", error: e.message });
-  }
+  });
 });
+
 
 
 app.post('/logout', (req,res)=>{
@@ -178,7 +169,11 @@ app.post('/admin/bulk-email', requireAdmin, async (req, res) => {
   if (!subject || !message)
     return res.status(400).json({ message: 'Subject and message required' });
 
-  const adminEmail = req.session.user.email;
+    const adminEmail =
+    (req.session?.user?.email) ||
+    process.env.ADMIN_EMAIL ||
+    process.env.SMTP_USER;
+
 
   let recipientList = [];
 

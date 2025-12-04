@@ -1,4 +1,7 @@
 (function(){
+    const API_BASE = window.location.hostname === "127.0.0.1"
+        ? "http://127.0.0.1:5000"
+        : "http://localhost:5000";
     // Theme handling (centralized)
     const THEME_KEY = 'theme';
 
@@ -47,31 +50,41 @@
             if(e.key === THEME_KEY && e.newValue) applyTheme(e.newValue);
         });
     }
-const API_BASE = window.location.hostname === "127.0.0.1"
-    ? "http://127.0.0.1:5000"
-    : "http://localhost:5000";
+        async function getSessionUser(){
+        const token = localStorage.getItem("jwt");
 
-    async function getSessionUser(){
-    try {
-        const res = await fetch(`${API_BASE}/me`, {
-            credentials: "include"
-        });
-        return res.ok ? res.json() : null;
-    } catch(e){
-        return null;
+        try {
+            const res = await fetch(`${API_BASE}/me`, {
+                method: "GET",
+                headers: {
+                    "Authorization": token ? `Bearer ${token}` : "",
+                    "Content-Type": "application/json"
+                },
+                credentials: "include"   // keep Redis session cookie
+            });
+
+            return res.ok ? res.json() : null;
+
+        } catch(e){
+            return null;
+        }
     }
-}
+
 
 
     async function logout(){
-    try{
-        await fetch(`${API_BASE}/logout`, {
-            method: "POST",
-            credentials: "include"
-        });
-    }catch(e){}
-    window.location.href = "index.html";
-}
+        try{
+            await fetch(`${API_BASE}/logout`, {
+                method: "POST",
+                credentials: "include"
+            });
+        }catch(e){}
+
+        localStorage.removeItem("jwt"); // <-- Added
+
+        window.location.href = "index.html";
+    }
+
 
 
     // Format a date/time value to IST (Asia/Kolkata)
@@ -177,12 +190,16 @@ const API_BASE = window.location.hostname === "127.0.0.1"
                         throw new Error(result.message || 'Login failed');
                     }
 
+                    //  SAVE JWT TOKEN HERE 
+                    localStorage.setItem("jwt", result.token);
+
                     overlay.style.display = 'none';
                     if(result.role === 'admin'){
                         window.location.href = 'admin.html';
                     } else {
                         window.location.href = 'user.html';
                     }
+
                 } catch(err){
                     showMessage(err.message || 'Login failed. Please try again.');
                 }
@@ -326,17 +343,21 @@ const API_BASE = window.location.hostname === "127.0.0.1"
 
                 if(!action.trim()) return;
 
-                await fetch(`${API_BASE}/add-history`,{
-                    credentials: "include",
-                    method: "POST",
-                    headers: {"Content-Type": "application/json"},
-                    body:JSON.stringify({
-                        username: user.username,
-                        role: user.role,
-                        action,
-                        language
-                    })
-                });
+                await fetch(`${API_BASE}/add-history`, {
+                credentials: "include",
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${localStorage.getItem("jwt")}`
+                },
+                body: JSON.stringify({
+                    username: user.username,
+                    role: user.role,
+                    action,
+                    language
+                })
+            });
+
             }catch(err){
                 console.log("Failed to save history", err);
             }
@@ -382,11 +403,34 @@ const API_BASE = window.location.hostname === "127.0.0.1"
                     }
 
                     if (view) {
-                        view.innerHTML = `
-                            <div style="white-space: pre-wrap; font-size: 13px; line-height: 1.5;">
-                                ${data.explanation || "No explanation returned."}
-                            </div>
-                        `;
+                        // Render markdown returned by the model into safe HTML
+                        const md = data.explanation || "No explanation returned.";
+                        let rendered = md;
+                        try {
+                            if (typeof marked !== 'undefined') {
+                                rendered = marked.parse(md);
+                            } else {
+                                // Fallback: escape HTML and preserve line breaks
+                                rendered = md
+                                    .replace(/&/g, '&amp;')
+                                    .replace(/</g, '&lt;')
+                                    .replace(/>/g, '&gt;')
+                                    .replace(/\n/g, '<br>');
+                            }
+                        } catch (e) {
+                            console.warn('Markdown parse failed, falling back to plain text', e);
+                            rendered = md.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\n/g, '<br>');
+                        }
+
+                        try {
+                            if (typeof DOMPurify !== 'undefined') {
+                                rendered = DOMPurify.sanitize(rendered);
+                            }
+                        } catch (e) {
+                            console.warn('DOMPurify sanitize failed', e);
+                        }
+
+                        view.innerHTML = `<div class="explanation-markdown" style="font-size:13px;line-height:1.6">${rendered}</div>`;
                     }
 
                     // 👉 save history only after successful explanation
@@ -447,12 +491,16 @@ const API_BASE = window.location.hostname === "127.0.0.1"
         const tblbody = document.getElementById("user_history");
         if(tblbody){
             try{
-                const response = await fetch(`${API_BASE}/user-history`,{
-                    credentials: "include",
-                    method: "POST",
-                    headers: {"Content-Type": "application/json"},
-                });
-                const result = await response.json();
+                const response = await fetch(`${API_BASE}/user-history`, {
+                credentials: "include",
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${localStorage.getItem("jwt")}`
+                }
+            });
+            const result = await response.json();
+
                 tblbody.innerHTML="";
                 result.forEach(data=>{
                     const tr=document.createElement('tr');
@@ -473,12 +521,16 @@ const API_BASE = window.location.hostname === "127.0.0.1"
         const tbody=document.getElementById("admin_user_history");
         if(tbody){
             try{
-                const response=await fetch(`${API_BASE}/admin-history`,{
-                    credentials: "include",
-                    method: "GET",
-                    headers: {"Content-Type": "application/json"}
-                });
-                const result=await response.json();
+                const response = await fetch(`${API_BASE}/admin-history`, {
+                credentials: "include",
+                method: "GET",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${localStorage.getItem("jwt")}`
+                }
+            });
+            const result = await response.json();
+
                 tbody.innerHTML="";
                 result.forEach(user=>{
                     const tr=document.createElement('tr');
@@ -511,7 +563,15 @@ const API_BASE = window.location.hostname === "127.0.0.1"
 
                     // Active users: fetch from /get-users (server-side user list)
                     try{
-                        const resUsers = await fetch(`${API_BASE}/get-users`,{ credentials: 'include' });
+                        const res = await fetch(`${API_BASE}/get-users`, {
+                            credentials: "include",
+                            method: "GET",
+                            headers: {
+                                "Content-Type": "application/json",
+                                "Authorization": `Bearer ${localStorage.getItem("jwt")}`
+                            }
+                        });
+
                         if(resUsers.ok){
                             const users = await resUsers.json();
                             const activeEl = document.getElementById('active-users');
@@ -641,7 +701,13 @@ const API_BASE = window.location.hostname === "127.0.0.1"
         const tablebody = document.getElementById("admin_user_data");
         if(!tablebody) return;
         try{
-            const res = await fetch(`${API_BASE}/get-users`,{ credentials: 'include' });
+            const res = await fetch(`${API_BASE}/get-users`,
+                    { credentials: 'include' ,
+                        headers: {
+                            "Authorization": `Bearer ${localStorage.getItem("jwt")}`,
+                            "Content-Type": "application/json"
+                        }
+                    });
             const result = await res.json();
             tablebody.innerHTML="";
             result.forEach(user=>{
@@ -660,15 +726,17 @@ const API_BASE = window.location.hostname === "127.0.0.1"
                     const username=btn.dataset.username;
                     if(!confirm(`Delete user ${username}`)) return;
                     try{
-                        const response=await fetch(`${API_BASE}/delete-user`,{
-                            credentials: "include",
-                            method:"POST",
-                            headers:{
-                                "Content-Type": "application/json"
-                            },
-                            body:JSON.stringify({username})
-                        });
-                        const result=await response.json();
+                        const response = await fetch(`${API_BASE}/delete-user`, {
+                        credentials: "include",
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json",
+                            "Authorization": `Bearer ${localStorage.getItem("jwt")}`
+                        },
+                        body: JSON.stringify({ username })
+                    });
+                    const result = await response.json();
+
                         console.log(result.message);
                         btn.closest("tr").remove();
                     } catch(err){

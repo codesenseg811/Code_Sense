@@ -95,12 +95,19 @@
 
         try{
           const res = await fetch(`${API_BASE}/admin/bulk-email`, {
-            method: 'POST',
-            credentials: 'include',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ recipients, subject, message })
-          });
-          const data = await res.json();
+          method: "POST",
+          credentials: "include",
+          headers: {
+              "Content-Type": "application/json",
+              "Authorization": `Bearer ${localStorage.getItem("jwt")}`
+          },
+          body: JSON.stringify({
+              recipients,
+              subject,
+              message
+          })
+      });
+
           if(!res.ok) throw new Error(data.message || 'Failed to send');
           alert('Emails sent successfully');
           form.reset();
