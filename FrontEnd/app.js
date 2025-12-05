@@ -715,52 +715,141 @@
         // ADMIN USER DATA TABLE
         const tablebody = document.getElementById("admin_user_data");
         if(!tablebody) return;
-        try{
-            const res = await fetch(`${API_BASE}/get-users`,
-                    { credentials: 'include' ,
-                        headers: {
-                            "Authorization": `Bearer ${localStorage.getItem("jwt")}`,
-                            "Content-Type": "application/json"
-                        }
-                    });
-            const result = await res.json();
-            tablebody.innerHTML="";
-            result.forEach(user=>{
-                const tr = document.createElement("tr");
-                tr.innerHTML= `
-                    <td>${user.username}</td>
-                    <td>${user.email || "—"}</td>
-                    <td>${user.requests || 0}</td>
-                    <td>${user.role}</td>
-                    <td><button class="delete_user" data-username="${user.username}">Delete</button></td>
-                `;
-                tablebody.appendChild(tr);
-            });    
-            document.querySelectorAll(".delete_user").forEach(btn=>{
-                btn.addEventListener("click",async ()=>{
-                    const username=btn.dataset.username;
-                    if(!confirm(`Delete user ${username}`)) return;
-                    try{
-                        const response = await fetch(`${API_BASE}/delete-user`, {
-                        credentials: "include",
-                        method: "POST",
-                        headers: {
-                            "Content-Type": "application/json",
-                            "Authorization": `Bearer ${localStorage.getItem("jwt")}`
-                        },
-                        body: JSON.stringify({ username })
-                    });
-                    const result = await response.json();
 
-                        console.log(result.message);
-                        btn.closest("tr").remove();
-                    } catch(err){
-                        console.log(err);
+        const addUserBtn = document.getElementById("add-user-btn");
+        const addUserModal = document.getElementById("add-user-modal");
+        const addUserForm = document.getElementById("add-user-form");
+        const addUserMessage = document.getElementById("add-user-message");
+        const addUserClose = document.getElementById("add-user-close");
+        const addUserRole = document.getElementById("add-role");
+
+        const showModal = () => {
+            if(!addUserModal) return;
+            addUserModal.classList.add("open");
+            addUserModal.setAttribute("aria-hidden", "false");
+            addUserMessage && (addUserMessage.textContent = "");
+        };
+
+        const hideModal = () => {
+            if(!addUserModal) return;
+            addUserModal.classList.remove("open");
+            addUserModal.setAttribute("aria-hidden", "true");
+            addUserForm && addUserForm.reset();
+            if(addUserMessage){
+                addUserMessage.textContent = "";
+                addUserMessage.className = "modal-message";
+            }
+        };
+
+        addUserBtn?.addEventListener('click', showModal);
+        addUserClose?.addEventListener('click', hideModal);
+        addUserModal?.addEventListener('click', (e)=>{
+            if(e.target === addUserModal) hideModal();
+        });
+
+        const setMessage = (text, kind = "") => {
+            if(!addUserMessage) return;
+            addUserMessage.textContent = text;
+            addUserMessage.className = `modal-message ${kind}`.trim();
+        };
+
+        async function fetchAdminUsers(){
+            tablebody.innerHTML = `
+                <tr><td colspan="5" style="text-align:center;color:var(--text-muted);padding:18px;">Loading users…</td></tr>
+            `;
+            try {
+                const res = await fetch(`${API_BASE}/get-users`, {
+                    credentials: 'include',
+                    headers: {
+                        "Authorization": `Bearer ${localStorage.getItem("jwt")}`,
+                        "Content-Type": "application/json"
                     }
                 });
-            });    
-        } catch (e){
-            console.log(e); 
+                const users = await res.json();
+                if(!res.ok) throw new Error(users.message || 'Unable to load users');
+                tablebody.innerHTML = "";
+                users.forEach(user => {
+                    const tr = document.createElement("tr");
+                    tr.innerHTML = `
+                        <td>${user.username}</td>
+                        <td>${user.email || "—"}</td>
+                        <td>${user.requests || 0}</td>
+                        <td>${user.role}</td>
+                        <td><button class="delete_user" data-username="${user.username}" data-user-id="${user._id || ''}">Delete</button></td>
+                    `;
+                    tablebody.appendChild(tr);
+                });
+
+                tablebody.querySelectorAll('.delete_user').forEach(btn => {
+                    btn.addEventListener('click', async () => {
+                        const username = btn.dataset.username;
+                        const userId = btn.dataset.userId;
+                        if(!username && !userId) return;
+                        const label = username || 'this user';
+                        if(!confirm(`Delete user ${label}?`)) return;
+                        try {
+                            const response = await fetch(`${API_BASE}/delete-user`, {
+                                credentials: "include",
+                                method: "POST",
+                                headers: {
+                                    "Content-Type": "application/json",
+                                    "Authorization": `Bearer ${localStorage.getItem("jwt")}`
+                                },
+                                body: JSON.stringify({ username, userId })
+                            });
+                            const data = await response.json();
+                            if(!response.ok) throw new Error(data.message || 'Failed to delete');
+                            await fetchAdminUsers();
+                        } catch(err) {
+                            alert(err.message || 'Unable to delete user');
+                        }
+                    });
+                });
+            } catch (error) {
+                console.log(error);
+                tablebody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:var(--danger);padding:18px;">Unable to load users</td></tr>`;
+            }
         }
+
+        addUserForm?.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const username = document.getElementById('add-username')?.value.trim();
+            const email = document.getElementById('add-email')?.value.trim();
+            const password = document.getElementById('add-password')?.value;
+            const confirm = document.getElementById('add-confirm')?.value;
+            const role = addUserRole?.value === 'admin' ? 'admin' : 'user';
+
+            if(!username || !password){
+                setMessage('Username and password are required', 'error');
+                return;
+            }
+            if(!email){
+                setMessage('Email is required', 'error');
+                return;
+            }
+            if(password !== confirm){
+                setMessage('Passwords do not match', 'error');
+                return;
+            }
+
+            setMessage('Creating user…');
+            try {
+                const response = await fetch(`${API_BASE}/admin/create-user`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify({ email, username, password, role })
+                });
+                const data = await response.json();
+                if(!response.ok) throw new Error(data.message || 'Unable to create user');
+                setMessage('User created successfully!', 'success');
+                await fetchAdminUsers();
+                setTimeout(() => hideModal(), 900);
+            } catch(err) {
+                setMessage(err.message || 'Failed to create user', 'error');
+            }
+        });
+
+        await fetchAdminUsers();
     });
 })();
