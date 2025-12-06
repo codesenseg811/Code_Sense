@@ -167,6 +167,9 @@
         const loginForm = modalElement.querySelector('#loginForm');
         const signupForm = modalElement.querySelector('#signupForm');
         const helperText = modalElement.querySelector('#authHelperText');
+        const helperLead = helperText?.querySelector('[data-helper-lead]') || null;
+        const helperTrail = helperText?.querySelector('[data-helper-trail]') || null;
+        const helperLink = helperText?.querySelector('[data-target-mode]') || null;
         const messageBox = modalElement.querySelector('#authMessage');
 
         const showMessage = (text = '', type = 'error') => {
@@ -182,17 +185,38 @@
             messageBox.className = 'auth-message ' + (type === 'success' ? 'success' : '');
         };
 
+        const updateHelperText = (mode) => {
+            if(!helperText) return;
+            if(helperLead && helperTrail && helperLink){
+                const isSignup = mode === 'signup';
+                helperLead.textContent = isSignup ? 'Already have an account?' : 'Need an account?';
+                helperTrail.textContent = isSignup ? 'to continue.' : 'to get started.';
+                helperLink.textContent = isSignup ? 'Login' : 'Sign Up';
+                helperLink.dataset.targetMode = isSignup ? 'login' : 'signup';
+            } else {
+                helperText.textContent = mode === 'signup'
+                    ? 'Already have an account? Switch back to Login.'
+                    : 'Need an account? Click Sign Up to get started.';
+            }
+        };
+
         const switchMode = (mode) => {
             modeButtons.forEach(btn => {
                 btn.classList.toggle('active', btn.dataset.mode === mode);
             });
             if(loginForm) loginForm.classList.toggle('active', mode === 'login');
             if(signupForm) signupForm.classList.toggle('active', mode === 'signup');
-            if(helperText) helperText.textContent = mode === 'signup' 
-                ? 'Already have an account? Switch back to Login.'
-                : 'Need an account? Click Sign Up to get started.';
+            updateHelperText(mode);
             showMessage('');
         };
+
+        if(helperLink){
+            helperLink.addEventListener('click', (e) => {
+                e.preventDefault();
+                const target = helperLink.dataset.targetMode || 'signup';
+                switchMode(target);
+            });
+        }
 
         modeButtons.forEach(btn => {
             btn.addEventListener('click', () => switchMode(btn.dataset.mode));
