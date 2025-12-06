@@ -316,6 +316,64 @@ app.post('/login', async (req, res) => {
   });
 });
 
+const { OAuth2Client } = require("google-auth-library");
+const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+
+app.post("/auth/google", async (req, res) => {
+  const { credential } = req.body; // Google JWT
+
+  if (!credential) {
+    return res.status(400).json({ message: "Missing Google credential" });
+  }
+
+  try {
+    // 1. Verify Google token
+    const ticket = await googleClient.verifyIdToken({
+      idToken: credential,
+      audience: process.env.GOOGLE_CLIENT_ID
+    });
+
+    const payload = ticket.getPayload();
+    const { sub: googleId, email, name, picture } = payload;
+
+    // 2. Check if user already exists
+    let user = await Login.findOne({ email });
+
+    // 3. If new → create user
+    if (!user) {
+      user = await Login.create({
+        email,
+        username: email.split("@")[0], // default username
+        googleId,
+        picture,
+        role: "user",
+        password: null // password not needed
+      });
+    }
+
+    // 4. Create session in Redis
+    req.session.user = {
+      username: user.username,
+      email: user.email,
+      role: user.role
+    };
+
+    // 5. Create your own JWT
+    const token = generateToken(user);
+
+    return res.json({
+      message: "Google login successful",
+      token,
+      username: user.username,
+      email: user.email,
+      role: user.role
+    });
+
+  } catch (err) {
+    console.error("Google auth error:", err);
+    return res.status(400).json({ message: "Google authentication failed" });
+  }
+});
 
 
 app.post('/logout', (req,res)=>{

@@ -160,6 +160,8 @@ function fibonacci(n) {
           <button type="submit" class="submit-btn">Login</button>
         </form>
 
+        <div id="googleBtn" style="margin-top:15px;"></div>
+
         <form id="signupForm" class="auth-form">
           <input type="email" id="signupEmail" placeholder="Email address" required />
           <input type="text" id="signupUsername" placeholder="Username" required />
@@ -217,6 +219,7 @@ function fibonacci(n) {
         <small>© 2025 CodeSense. All rights reserved.</small>
       </div>
     </footer>
+    <script src="app.js"></script>
+<script src="https://accounts.google.com/gsi/client" async defer onload="googleLoaded()"></script>
   </body>
-  <script src="app.js"></script>
 </html>

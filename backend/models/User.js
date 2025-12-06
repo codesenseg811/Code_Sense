@@ -1,7 +1,7 @@
 const mongoose = require('mongoose');
 
 const UserSchema = new mongoose.Schema({
-  username: { type: String, required: true, unique: true },
+  username: { type: String },
   email: { 
     type: String, 
     required: true,
@@ -9,8 +9,15 @@ const UserSchema = new mongoose.Schema({
     lowercase: true,
     match: [/^\S+@\S+\.\S+$/, "Invalid email format"]
   },
-  password: { type: String, required: true },
-  role: { type: String, default: "user" }
+
+  // Password only required for email-password users
+  password: { type: String },
+
+  role: { type: String, default: "user" },
+
+  // NEW FIELDS FOR GOOGLE USERS
+  googleId: { type: String, unique: true, sparse: true },
+  picture: { type: String }
 });
 
 module.exports = mongoose.model("Login", UserSchema, "login");
