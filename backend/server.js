@@ -117,6 +117,29 @@ function requireAdmin(req, res, next) {
   }
   next();
 }
+
+async function loadUserFromSession(req) {
+  const sessionUser = req.session?.user;
+  if (!sessionUser) return null;
+
+  const query = sessionUser.email
+    ? { email: sessionUser.email }
+    : sessionUser.username
+    ? { username: sessionUser.username }
+    : null;
+
+  if (!query) return null;
+
+  const userDoc = await Login.findOne(query);
+  if (userDoc) {
+    req.session.user.email = userDoc.email;
+    req.session.user.username = userDoc.username;
+    req.session.user.displayName = userDoc.displayName || userDoc.username;
+    req.session.user.preferredLanguage = userDoc.preferredLanguage || "Auto";
+  }
+
+  return userDoc;
+}
 // STEP 1: user submits email+username+password, we send OTP and store data in Redis (temporary)
 app.post('/register/request-otp', async (req, res) => {
   const { email, username, password } = req.body;
@@ -216,7 +239,9 @@ app.post('/register', async (req, res) => {
     const user = await Login.create({
       email: pending.email,
       username: pending.username,
+      displayName: pending.username,
       password: pending.passwordHash,
+      preferredLanguage: "Auto",
       role: "user"
     });
 
@@ -261,7 +286,9 @@ app.post('/admin/create-user', requireAdmin, async (req, res) => {
     const newUser = await Login.create({
       email: email.toLowerCase(),
       username,
+        displayName: username,
       password: hashed,
+        preferredLanguage: "Auto",
       role: role === "admin" ? "admin" : "user"
     });
 
@@ -297,7 +324,9 @@ app.post('/login', async (req, res) => {
   req.session.user = {
     username: user.username,
     email: user.email,
-    role: user.role
+    role: user.role,
+    displayName: user.displayName || user.username,
+    preferredLanguage: user.preferredLanguage || "Auto"
   };
 
   // PROMETHEUS: increment login counter here
@@ -311,7 +340,9 @@ app.post('/login', async (req, res) => {
       token,                      // NEW
       username: user.username,
       email: user.email,
-      role: user.role
+      role: user.role,
+      displayName: user.displayName || user.username,
+      preferredLanguage: user.preferredLanguage || "Auto"
     });
   });
 });
@@ -335,6 +366,8 @@ app.post("/auth/google", async (req, res) => {
 
     const payload = ticket.getPayload();
     const { sub: googleId, email, name, picture } = payload;
+    const derivedUsername = (email && email.split("@")[0]) || googleId;
+    const derivedDisplayName = name || derivedUsername;
 
     // 2. Check if user already exists
     let user = await Login.findOne({ email });
@@ -343,7 +376,9 @@ app.post("/auth/google", async (req, res) => {
     if (!user) {
       user = await Login.create({
         email,
-        username: email.split("@")[0], // default username
+        username: derivedUsername,
+        displayName: derivedDisplayName,
+        preferredLanguage: "Auto",
         googleId,
         picture,
         role: "user",
@@ -355,7 +390,9 @@ app.post("/auth/google", async (req, res) => {
     req.session.user = {
       username: user.username,
       email: user.email,
-      role: user.role
+      role: user.role,
+      displayName: user.displayName || user.username,
+      preferredLanguage: user.preferredLanguage || "Auto"
     };
 
     // 5. Create your own JWT
@@ -366,7 +403,9 @@ app.post("/auth/google", async (req, res) => {
       token,
       username: user.username,
       email: user.email,
-      role: user.role
+      role: user.role,
+      displayName: user.displayName || user.username,
+      preferredLanguage: user.preferredLanguage || "Auto"
     });
 
   } catch (err) {
@@ -390,11 +429,81 @@ app.post('/logout', (req,res)=>{
   });
 });
 
-app.get('/me', (req, res) => {
+app.get('/me', async (req, res) => {
   if (!req.session.user) {
     return res.status(401).json(null);
   }
-  return res.json(req.session.user); // { username, role }
+
+  try {
+    const userDoc = await loadUserFromSession(req);
+    if (!userDoc) {
+      return res.status(404).json({ message: "User not found" });
+    }
+    return res.json(req.session.user);
+  } catch (err) {
+    console.error('session lookup error', err);
+    return res.status(500).json({ message: "Unable to load session" });
+  }
+});
+
+app.get('/user/settings', requireLogin, async (req, res) => {
+  try {
+    const user = await loadUserFromSession(req);
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    return res.json({
+      username: user.username,
+      email: user.email,
+      displayName: user.displayName || user.username,
+      preferredLanguage: user.preferredLanguage || "Auto"
+    });
+  } catch (err) {
+    console.error('settings fetch error', err);
+    return res.status(500).json({ message: "Unable to load settings" });
+  }
+});
+
+app.patch('/user/settings', requireLogin, async (req, res) => {
+  const { displayName, preferredLanguage, newPassword } = req.body || {};
+
+  try {
+    const user = await loadUserFromSession(req);
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    if (typeof displayName === 'string' && displayName.trim()) {
+      user.displayName = displayName.trim();
+    }
+
+    if (typeof preferredLanguage === 'string' && preferredLanguage.trim()) {
+      user.preferredLanguage = preferredLanguage.trim();
+    }
+
+    if (newPassword) {
+      if (typeof newPassword !== 'string' || newPassword.length < 6) {
+        return res.status(400).json({ message: "Password must be at least 6 characters" });
+      }
+      user.password = await bcrypt.hash(newPassword, 10);
+    }
+
+    await user.save();
+
+    req.session.user.displayName = user.displayName || user.username;
+    req.session.user.preferredLanguage = user.preferredLanguage || "Auto";
+    req.session.user.email = user.email;
+
+    return res.json({
+      message: "Settings updated",
+      user: {
+        username: user.username,
+        email: user.email,
+        displayName: user.displayName || user.username,
+        preferredLanguage: user.preferredLanguage || "Auto"
+      }
+    });
+  } catch (err) {
+    console.error('settings update error', err);
+    return res.status(500).json({ message: "Unable to save settings" });
+  }
 });
 
 
