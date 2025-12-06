@@ -136,14 +136,26 @@
     }
 
     function showLoginModal(triggerElement){
-        // If a static modal exists in the page, show it instead of creating a new one
-        const staticModal = document.getElementById('loginModal') || document.getElementById('login-modal');
-        if(staticModal){
-            staticModal.style.display = 'flex';
-            setupAuthModal(staticModal);
-            return;
+    const staticModal = document.getElementById('loginModal');
+
+    if(staticModal){
+        staticModal.style.display = 'flex';
+        setupAuthModal(staticModal);
+
+        // ⭐ Render Google button AFTER modal becomes visible
+        try {
+            google.accounts.id.renderButton(
+                document.getElementById("googleBtn"),
+                { theme: "outline", size: "large", width: "280" }
+            );
+        } catch (e) {
+            console.warn("Google button render failed:", e);
         }
+
+        return;
     }
+}
+
 
     function setupAuthModal(modalElement){
         if(!modalElement || modalElement.dataset.authWired === 'true') return;
@@ -295,6 +307,55 @@
         switchMode('login');
     }
     
+    // ---------------------------
+// GOOGLE GLOBAL HANDLERS
+// ---------------------------
+
+// Google login response handler (global)
+window.handleGoogleLogin = async (response) => {
+  try {
+    const res = await fetch(`${API_BASE}/auth/google`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify({ credential: response.credential })
+    });
+
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message);
+
+    localStorage.setItem("jwt", data.token);
+
+    if (data.role === "admin") location.href = "admin.html";
+    else location.href = "user.html";
+
+  } catch (err) {
+    alert("Google login failed: " + err.message);
+  }
+};
+
+// Google script onload handler (global)
+window.googleLoaded = () => {
+  console.log("Google script loaded!");
+
+  if (window.google && google.accounts && google.accounts.id) {
+    google.accounts.id.initialize({
+      client_id: "158001809006-6vbn09scbhbeud9njlov8gvl7judjuvf.apps.googleusercontent.com",
+      callback: handleGoogleLogin
+    });
+
+    // Render button if modal already visible
+    const btn = document.getElementById("googleBtn");
+    if (btn) {
+      google.accounts.id.renderButton(btn, {
+        theme: "outline",
+        size: "large",
+        width: "280"
+      });
+    }
+  }
+};
+
     document.addEventListener('DOMContentLoaded', async ()=>{
 
     // Always initialize theme controls (works on all pages)
@@ -870,5 +931,7 @@
         });
 
         await fetchAdminUsers();
+       
     });
+
 })();
