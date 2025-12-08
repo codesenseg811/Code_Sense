@@ -568,22 +568,32 @@ input[type="number"]:focus {
   box-shadow: 0 0 0 1px rgba(99, 102, 241, 0.2);
 }
 
-/* Slider placeholder */
-section > div:nth-of-type(2) > div {
-  height: 6px;
-  border-radius: 999px;
-  background: #e5e7eb;
-  position: relative;
-  margin: 8px 0 4px;
+.temperature-slider {
+  display: grid;
+  grid-template-columns: auto 1fr auto auto;
+  align-items: center;
+  gap: 10px;
 }
 
-section > div:nth-of-type(2) > div::before {
-  content: "";
-  position: absolute;
-  height: 100%;
-  width: 70%;
-  border-radius: inherit;
-  background: var(--accent-gradient);
+.temperature-slider input[type="range"] {
+  width: 100%;
+  accent-color: var(--accent);
+}
+
+.temperature-slider [data-temp-value] {
+  font-weight: 600;
+  min-width: 48px;
+  text-align: center;
+}
+
+.form-status {
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  margin: 0 0 6px;
+}
+
+.form-status.error {
+  color: var(--danger);
 }
 
 /* Checkbox */
