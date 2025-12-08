@@ -922,17 +922,28 @@ window.googleLoaded = () => {
                     const labels = top.map(e => e[0]);
                     const data = top.map(e => e[1]);
 
-                    // Render languages bar chart
+                    // Render languages bar chart (update in-place to avoid flicker)
                     const el = document.getElementById('languagesBar');
                     if (el) {
                         try {
-                            if (window.languagesBarChart) window.languagesBarChart.destroy();
-                            const ctx = el.getContext('2d');
-                            window.languagesBarChart = new Chart(ctx, {
-                                type: 'bar',
-                                data: { labels, datasets: [{ label: 'Requests', data, backgroundColor: labels.map((_, i) => `hsl(${(i * 40) % 360} 70% 55%)`) }] },
-                                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true } } }
-                            });
+                            if (window.languagesBarChart) {
+                                // Update existing chart data instead of recreating
+                                window.languagesBarChart.data.labels = labels;
+                                window.languagesBarChart.data.datasets[0].data = data;
+                                // Only update if data changed to avoid repaint flicker
+                                try{
+                                    const prev = JSON.stringify(window.languagesBarChart.data.datasets[0].data || []);
+                                    const next = JSON.stringify(data || []);
+                                    if(prev !== next) window.languagesBarChart.update();
+                                }catch(e){ window.languagesBarChart.update(); }
+                            } else {
+                                const ctx = el.getContext('2d');
+                                window.languagesBarChart = new Chart(ctx, {
+                                    type: 'bar',
+                                    data: { labels, datasets: [{ label: 'Requests', data, backgroundColor: labels.map((_, i) => `hsl(${(i * 40) % 360} 70% 55%)`) }] },
+                                    options: { responsive: true, maintainAspectRatio: false, animation: { duration: 0 }, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true } } }
+                                });
+                            }
                         } catch (e) {
                             console.warn('Failed to render languages bar', e);
                         }
@@ -946,13 +957,23 @@ window.googleLoaded = () => {
                             const el2 = document.getElementById('activeUsersLine');
                             if (el2) {
                                 try {
-                                    if (window.activeUsersChart) window.activeUsersChart.destroy();
-                                    const ctx2 = el2.getContext('2d');
-                                    window.activeUsersChart = new Chart(ctx2, {
-                                        type: 'line',
-                                        data: { labels: usage.labels || [], datasets: [{ label: 'Actions per day', data: usage.counts || [], borderColor: '#10b981', backgroundColor: 'rgba(16,185,129,0.08)', fill: true }] },
-                                        options: { responsive: true, maintainAspectRatio: false }
-                                    });
+                                    if (window.activeUsersChart) {
+                                        window.activeUsersChart.data.labels = usage.labels || [];
+                                        window.activeUsersChart.data.datasets[0].data = usage.counts || [];
+                                        // Only update if data changed
+                                        try{
+                                            const prev = JSON.stringify(window.activeUsersChart.data.datasets[0].data || []);
+                                            const next = JSON.stringify(usage.counts || []);
+                                            if(prev !== next) window.activeUsersChart.update();
+                                        }catch(e){ window.activeUsersChart.update(); }
+                                    } else {
+                                        const ctx2 = el2.getContext('2d');
+                                        window.activeUsersChart = new Chart(ctx2, {
+                                            type: 'line',
+                                            data: { labels: usage.labels || [], datasets: [{ label: 'Actions per day', data: usage.counts || [], borderColor: '#10b981', backgroundColor: 'rgba(16,185,129,0.08)', fill: true }] },
+                                            options: { responsive: true, maintainAspectRatio: false }
+                                        });
+                                    }
                                 } catch (e) {
                                     console.warn('Failed to render active users chart', e);
                                 }
